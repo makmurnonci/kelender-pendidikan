@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kalender Pendidikan</title>
+
+<!-- Firebase (dibutuhkan agar data usulan & kalender bisa dibagikan ke semua orang saat di-hosting di GitHub Pages) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+<style>
+body{font-family:Arial;background:#f4f7fb;padding:20px;color:#2d3436}
+h1{text-align:center;margin-bottom:4px}
+.controls{text-align:center;margin-bottom:15px}
+select,button,input{padding:8px;margin:5px;font-size:14px;border-radius:6px;border:1px solid #ccc}
+button{cursor:pointer;background:#3498db;color:#fff;border:none}
+button:hover{background:#2980b9}
+button.secondary{background:#7f8c8d}
+button.secondary:hover{background:#636e72}
+button.danger{background:#e74c3c}
+button.danger:hover{background:#c0392b}
+button.success{background:#27ae60}
+button.success:hover{background:#1e8449}
+
+.year-container{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}
+.month{background:#fff;padding:10px;border-radius:10px;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
+.month h3{text-align:center}
+.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+
+.day{padding:3px;font-size:11px;text-align:center;border-radius:4px;background:#ecf0f1;cursor:pointer}
+.day.readonly{cursor:default}
+.header{background:#3498db;color:#fff;font-weight:bold}
+.sunday{background:#e74c3c;color:#fff}
+.saturday{background:#f39c12;color:#fff}
+
+.c1{background:#8e44ad;color:#fff} .c2{background:#16a085;color:#fff} .c3{background:#d35400;color:#fff}
+.c4{background:#2c3e50;color:#fff} .c5{background:#e84393;color:#fff} .c6{background:#0984e3;color:#fff}
+.c7{background:#00b894;color:#fff} .c8{background:#fdcb6e;color:#000} .c9{background:#6c5ce7;color:#fff}
+.c10{background:#e17055;color:#fff} .c11{background:#00cec9;color:#000} .c12{background:#fab1a0;color:#000}
+.c13{background:#1abc9c;color:#fff} .c14{background:#2ecc71;color:#fff} .c15{background:#27ae60;color:#fff}
+.c16{background:#2980b9;color:#fff} .c17{background:#8e44ad;color:#fff} .c18{background:#c0392b;color:#fff}
+.c19{background:#7f8c8d;color:#fff} .c20{background:#f1c40f;color:#000} .c21{background:#ffffff;border:2px solid #2d3436;color:#000}
+
+.color-btn{display:inline-block;width:20px;height:20px;border-radius:50%;margin:3px;cursor:pointer;border:1px solid #ccc}
+.color-btn.selected{outline:3px solid #2d3436;outline-offset:1px}
+
+.note-editor{width:100%;min-height:120px;border:1px solid #ccc;padding:8px;background:#fff;box-sizing:border-box}
+.note-editor.readonly{background:#f9f9f9;color:#555}
+.toolbar button{margin:2px;padding:4px;font-size:11px}
+
+.effective{text-align:center;font-size:12px;margin-top:5px}
+.summary{text-align:center;margin-top:15px;font-weight:bold}
+.footer{text-align:center;margin-top:20px;font-weight:bold;font-size:12px;color:#636e72}
+
+.p1{background-image: repeating-linear-gradient(45deg, rgba(0,0,0,0.2) 2px, transparent 2px, transparent 6px);}
+.p2{background-image: repeating-linear-gradient(-45deg, rgba(0,0,0,0.2) 2px, transparent 2px, transparent 6px);}
+.p3{background-image: repeating-linear-gradient(90deg, rgba(0,0,0,0.2) 2px, transparent 2px, transparent 6px);}
+.p4{background-image: radial-gradient(#000 1px, transparent 1px);background-size:6px 6px;}
+.p5{background-image: linear-gradient(#000 1px, transparent 1px),linear-gradient(90deg,#000 1px,transparent 1px);background-size:6px 6px;}
+.p6{background: repeating-linear-gradient(45deg,#fff3 0 4px,#0003 4px 8px);}
+.p7{background: repeating-linear-gradient(0deg,#0002 0 2px,transparent 2px 6px);}
+.p8{background: repeating-linear-gradient(90deg,#0002 0 2px,transparent 2px 6px);}
+.p9{background-image: repeating-linear-gradient(135deg, rgba(0,0,0,0.15) 1px, transparent 1px, transparent 5px);}
+.p10{background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.3) 2px, transparent 2px, transparent 8px);}
+.p11{background-image: radial-gradient(circle, rgba(0,0,0,0.2) 1px, transparent 1px);background-size: 8px 8px;}
+.p12{background-image: linear-gradient(45deg, rgba(0,0,0,0.15) 25%, transparent 25%, transparent 75%, rgba(0,0,0,0.15) 75%);background-size: 10px 10px;}
+.p13{background-image: repeating-linear-gradient(0deg, rgba(0,0,0,0.2) 1px, transparent 1px, transparent 4px);}
+.p14{background-image: repeating-linear-gradient(90deg, rgba(0,0,0,0.2) 1px, transparent 1px, transparent 4px);}
+.p15{background-image: repeating-linear-gradient(60deg, rgba(0,0,0,0.15) 2px, transparent 2px, transparent 6px);}
+.p16{background-image: repeating-linear-gradient(-60deg, rgba(0,0,0,0.15) 2px, transparent 2px, transparent 6px);}
+
+.topbar{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:bold}
+.badge.admin{background:#27ae60;color:#fff}
+.badge.public{background:#95a5a6;color:#fff}
+.badge.pending{background:#e67e22;color:#fff}
+.badge.error{background:#e74c3c;color:#fff}
+
+.panel{max-width:900px;margin:20px auto;background:#fff;border-radius:10px;padding:18px;box-shadow:0 2px 6px rgba(0,0,0,0.1)}
+.panel h2{margin-top:0;text-align:center;font-size:18px}
+.panel p.hint{text-align:center;font-size:12px;color:#636e72;margin-top:-8px}
+
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-grid label{font-size:12px;font-weight:bold;display:block;margin-bottom:3px}
+.form-grid .full{grid-column:1/3}
+.form-grid input,.form-grid select,.form-grid textarea{width:100%;box-sizing:border-box;margin:0}
+.form-grid textarea{min-height:60px;font-family:Arial}
+.form-actions{text-align:center;margin-top:10px}
+
+.swatch{display:inline-block;width:14px;height:14px;border-radius:50%;vertical-align:middle;margin-right:5px;border:1px solid #ccc}
+
+.usulan-list{margin-top:15px;display:flex;flex-direction:column;gap:10px}
+.usulan-card{border:1px solid #e0e0e0;border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.usulan-card .info{flex:1;min-width:200px}
+.usulan-card .info b{font-size:14px}
+.usulan-card .meta{font-size:11px;color:#636e72;margin-top:2px}
+.usulan-card .ket{font-size:13px;margin-top:5px}
+.usulan-card .actions{display:flex;gap:6px;flex-wrap:wrap}
+.usulan-card .actions button{margin:0;font-size:12px;padding:6px 10px}
+.empty-note{text-align:center;color:#636e72;font-size:13px;padding:10px}
+
+.loading{text-align:center;padding:30px;font-size:14px;color:#636e72}
+
+.setup-box{max-width:700px;margin:40px auto;background:#fff;border-radius:10px;padding:25px 30px;box-shadow:0 2px 8px rgba(0,0,0,0.15);line-height:1.6}
+.setup-box h2{margin-top:0}
+.setup-box code{background:#f1f2f6;padding:2px 6px;border-radius:4px;font-size:13px}
+.setup-box pre{background:#2d3436;color:#f1f2f6;padding:12px;border-radius:8px;overflow-x:auto;font-size:12px}
+.setup-box ol{padding-left:20px}
+.setup-box li{margin-bottom:10px}
+
+@media print {
+  .controls, .color-btn, .toolbar, .topbar, .panel, button, select { display: none !important; }
+  body { background: white; padding: 0; }
+  .month { box-shadow: none; border: 1px solid #ccc; }
+}
+
+@media (max-width:700px){
+  .year-container{grid-template-columns:1fr}
+  .form-grid{grid-template-columns:1fr}
+  .form-grid .full{grid-column:1}
+}
+</style>
+</head>
+
+<body>
+
+<!-- ======================================================
+     LAYAR PENGATURAN (muncul jika Firebase belum dikonfigurasi)
+     ====================================================== -->
+<div id="setupScreen" class="setup-box" style="display:none">
+  <h2>⚙️ Sekali Saja: Hubungkan ke Firebase</h2>
+  <p>Agar kalender ini bisa dipakai bersama-sama (usulan tersimpan untuk semua orang), Anda perlu membuat database gratis di Firebase (milik Google), lalu tempelkan kode konfigurasinya di file ini.</p>
+  <ol>
+    <li>Buka <b>console.firebase.google.com</b>, login dengan akun Google, klik <b>Add project</b> / Tambah project, beri nama bebas (mis. <code>kalender-pendidikan</code>), lalu selesaikan pembuatan project.</li>
+    <li>Di menu kiri, buka <b>Build → Realtime Database</b> → klik <b>Create Database</b>. Pilih lokasi server (mis. Singapore), lalu pilih mode <b>Start in test mode</b> → Enable.</li>
+    <li>Di menu kiri, buka <b>Project settings</b> (ikon gerigi) → scroll ke bawah ke bagian <b>Your apps</b> → klik ikon <code>&lt;/&gt;</code> (Web) → beri nama app → <b>Register app</b>.</li>
+    <li>Firebase akan menampilkan kode <code>firebaseConfig</code>. Salin seluruh isinya.</li>
+    <li>Buka file HTML ini dengan editor teks (Notepad/VS Code), cari bagian <code>FIREBASE_CONFIG</code> di dekat awal tag <code>&lt;script&gt;</code> paling bawah, dan ganti isinya dengan yang Anda salin dari Firebase.</li>
+    <li>Simpan file, lalu upload ulang ke GitHub (Add file → Upload files → Commit changes, timpa file lama). Tunggu 1 menit, refresh halamannya.</li>
+  </ol>
+  <p style="font-size:12px;color:#636e72">Catatan: mode "test" pada Realtime Database berarti siapa pun yang tahu alamat database bisa membaca/menulis data secara langsung (bukan hanya lewat halaman ini). Ini cukup aman untuk pemakaian internal sekolah, tapi bukan pengamanan tingkat tinggi. Anda bisa memperketat aturan akses nanti lewat menu <code>Rules</code> di Firebase jika diperlukan.</p>
+</div>
+
+<div id="pageContent" style="display:none">
+
+<div style="text-align:center;margin-bottom:10px">
+  <div contenteditable="false" id="kop1" style="font-weight:bold;font-size:18px">DINAS PENDIDIKAN</div>
+  <div contenteditable="false" id="kop2" style="font-size:16px">NAMA SEKOLAH</div>
+  <div contenteditable="false" id="kop3" style="font-size:14px">ALAMAT SEKOLAH</div>
+</div>
+
+<h1>KALENDER PENDIDIKAN</h1>
+
+<div class="topbar">
+  <span id="roleBadge" class="badge public">Mode: Publik (lihat & usulkan)</span>
+  <button id="loginBtn" class="secondary" onclick="loginAdmin()">🔒 Masuk Admin</button>
+  <button id="logoutBtn" class="secondary" style="display:none" onclick="logoutAdmin()">Keluar Admin</button>
+  <button class="secondary" onclick="muatUlang()">🔄 Muat Ulang Data</button>
+</div>
+
+<div id="loadingMsg" class="loading">Memuat data kalender…</div>
+
+<div id="appRoot" style="display:none">
+
+<div class="controls" id="adminControls" style="display:none">
+Tahun Ajaran Mulai:
+<select id="startYear"></select>
+
+Mode Hari Kerja:
+<select id="modeKerja">
+<option value="5">5 Hari</option>
+<option value="6">6 Hari</option>
+</select>
+
+<br>
+
+<button class="success" onclick="simpanData()">💾 Simpan ke Server</button>
+<button onclick="window.print()">🖨️ Cetak</button>
+<button class="secondary" onclick="resetPerBulan()">Reset Perbulan</button>
+<button class="secondary" onclick="zoomTanggal(1)">Zoom +</button>
+<button class="secondary" onclick="zoomTanggal(-1)">Zoom -</button>
+</div>
+
+<div class="controls" id="publicControls">
+<button onclick="window.print()">🖨️ Cetak</button>
+<button class="secondary" onclick="zoomTanggal(1)">Zoom +</button>
+<button class="secondary" onclick="zoomTanggal(-1)">Zoom -</button>
+</div>
+
+<div style="text-align:center" id="colorPicker"></div>
+<div style="text-align:center;font-size:12px;margin-top:5px">Warna putih garis hitam = tidak mengurangi hari efektif</div>
+<div style="text-align:center;margin-top:10px" id="patternPicker"></div>
+
+<div id="container" class="year-container"></div>
+<div id="summary" class="summary"></div>
+
+<div class="panel">
+  <h2>📝 Usulkan Tanggal / Kegiatan</h2>
+  <p class="hint">Usulan akan dikirim ke admin. Kalender resmi hanya berubah setelah admin menyetujui.</p>
+  <div class="form-grid">
+    <div>
+      <label>Nama Pengusul</label>
+      <input type="text" id="fNama" placeholder="Nama Anda">
+    </div>
+    <div>
+      <label>Warna Kategori</label>
+      <select id="fWarna"></select>
+    </div>
+    <div>
+      <label>Tanggal Mulai</label>
+      <input type="date" id="fMulai">
+    </div>
+    <div>
+      <label>Tanggal Selesai</label>
+      <input type="date" id="fSelesai">
+    </div>
+    <div class="full">
+      <label>Keterangan Kegiatan</label>
+      <textarea id="fKet" placeholder="Contoh: Libur Hari Raya, Ujian Semester, dst."></textarea>
+    </div>
+  </div>
+  <div class="form-actions">
+    <button class="success" onclick="kirimUsulan()">📩 Kirim Usulan</button>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>📋 Daftar Usulan <span id="usulanCount" class="badge pending" style="display:none"></span></h2>
+  <p class="hint">Menampilkan seluruh usulan yang masuk.</p>
+  <div id="usulanList" class="usulan-list"></div>
+</div>
+
+<div class="footer">Dibuat oleh Makmur Nonci</div>
+
+</div><!-- /appRoot -->
+</div><!-- /pageContent -->
+
+<script>
+/* =========================================================
+   KONFIGURASI FIREBASE
+   Ganti seluruh isi objek di bawah ini dengan kode
+   "firebaseConfig" yang Anda dapat dari Firebase Console.
+   ========================================================= */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCkXPmxVCWjYdgc1Ueu3fCgPsF8cFJ-NPA",
+  authDomain: "kalender-pendidikan-583e3.firebaseapp.com",
+  databaseURL: "https://kalender-pendidikan-583e3-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "kalender-pendidikan-583e3",
+  storageBucket: "kalender-pendidikan-583e3.firebasestorage.app",
+  messagingSenderId: "453679762444",
+  appId: "1:453679762444:web:bd0fd8265a2534226db229"
+};
+
+// Ganti kata sandi admin ini sesuai kebutuhan sekolah Anda.
+const ADMIN_PASSWORD = "admin2026";
+
+let db = null;
+let isAdmin = false;
+let selectedColor = "c1";
+let selectedPattern = "";
+let activeEditor = null;
+let dirty = false;
+
+let official = defaultOfficial();
+let usulanList = [];
+
+function defaultOfficial(){
+  return {
+    kop1: "DINAS PENDIDIKAN",
+    kop2: "NAMA SEKOLAH",
+    kop3: "ALAMAT SEKOLAH",
+    tahunMulai: 2026,
+    modeKerja: 5,
+    zoom: 11,
+    days: {},
+    notes: {},
+    noteHeights: {}
+  };
+}
+
+const PRESET_EVENTS = {
+ "2026-6-1":"c1|p1","2026-6-2":"c1|p1","2026-6-3":"c1|p1","2026-6-4":"c1|p1","2026-6-5":"c1|p1",
+ "2026-6-6":"c1|p1","2026-6-7":"c1|p1","2026-6-8":"c1|p1","2026-6-9":"c1|p1","2026-6-10":"c1|p1",
+ "2026-6-13":"c2|p2","2026-6-14":"c2|p2","2026-6-15":"c2|p2","2026-6-16":"c2|p2","2026-6-17":"c2|p2",
+ "2026-7-17":"c3|p3","2026-7-25":"c4|p4",
+ "2026-9-1":"c3|p3","2026-9-28":"c3|p3",
+ "2026-10-10":"c3|p3",
+ "2026-11-7":"c5|p5","2026-11-8":"c5|p5","2026-11-9":"c5|p5","2026-11-10":"c5|p5","2026-11-11":"c5|p5",
+ "2026-11-14":"c6|p6","2026-11-15":"c6|p6","2026-11-16":"c6|p6","2026-11-17":"c6|p6","2026-11-18":"c6|p6",
+ "2026-11-19":"c6|p6","2026-11-20":"c6|p6","2026-11-21":"c6|p6","2026-11-22":"c6|p6",
+ "2026-11-23":"c1|p1","2026-11-24":"c1|p1","2026-11-25":"c1|p1","2026-11-28":"c1|p1","2026-11-29":"c1|p1","2026-11-30":"c1|p1",
+ "2027-0-1":"c3|p3","2027-0-5":"c4|p4",
+ "2027-1-6":"c4|p4","2027-1-8":"c1|p1","2027-1-9":"c1|p1","2027-1-10":"c1|p1",
+ "2027-2-5":"c1|p1","2027-2-6":"c1|p1","2027-2-7":"c1|p1","2027-2-8":"c1|p1",
+ "2027-2-10":"c4|p4","2027-2-11":"c1|p1","2027-2-12":"c1|p1","2027-2-13":"c1|p1","2027-2-14":"c1|p1",
+ "2027-2-15":"c1|p1","2027-2-16":"c1|p1","2027-2-17":"c1|p1","2027-2-18":"c1|p1","2027-2-19":"c1|p1",
+ "2027-2-28":"c4|p4",
+ "2027-3-5":"c7|p7","2027-3-30":"c7|p7",
+ "2027-4-1":"c3|p3","2027-4-2":"c3|p3",
+ "2027-4-5":"c1|p1","2027-4-6":"c1|p1",
+ "2027-4-10":"c8|p8","2027-4-11":"c8|p8","2027-4-12":"c8|p8","2027-4-13":"c8|p8","2027-4-14":"c8|p8",
+ "2027-4-17":"c1|p1","2027-4-18":"c1|p1","2027-4-20":"c4|p4",
+ "2027-5-1":"c3|p3","2027-5-6":"c4|p4",
+ "2027-5-14":"c5|p5","2027-5-15":"c5|p5","2027-5-16":"c5|p5","2027-5-17":"c5|p5","2027-5-18":"c5|p5",
+ "2027-5-21":"c6|p6","2027-5-22":"c6|p6","2027-5-23":"c6|p6","2027-5-24":"c6|p6",
+ "2027-5-25":"c1|p1","2027-5-28":"c1|p1","2027-5-29":"c1|p1","2027-5-30":"c1|p1",
+ "2027-6-1":"c1|p1","2027-6-2":"c1|p1","2027-6-3":"c1|p1","2027-6-4":"c1|p1","2027-6-5":"c1|p1","2027-6-6":"c1|p1","2027-6-7":"c1|p1","2027-6-8":"c1|p1","2027-6-9":"c1|p1"
+};
+
+const months=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+const days=["M","S","S","R","K","J","S"];
+const colorLabels = {
+ c1:"Libur Umum",c2:"Libur Semester",c3:"Hari Besar",c4:"Hari Besar",c5:"Pekan Ujian",c6:"Pekan Ujian",
+ c7:"Kegiatan Sekolah",c8:"Ujian Sekolah",c21:"Keterangan (tidak mengurangi hari efektif)"
+};
+
+/* =========================================================
+   FIREBASE HELPERS
+   ========================================================= */
+function firebaseSudahDiatur(){
+  return FIREBASE_CONFIG.apiKey && !FIREBASE_CONFIG.apiKey.includes("GANTI");
+}
+
+async function loadOfficial(){
+  try{
+    const snap = await db.ref("official_data").once("value");
+    const val = snap.val();
+    official = val ? Object.assign(defaultOfficial(), val) : defaultOfficial();
+    if(!val){
+      Object.entries(PRESET_EVENTS).forEach(([k,v])=>{ official.days[k]=v; });
+    }
+  }catch(e){
+    console.error(e);
+    official = defaultOfficial();
+    Object.entries(PRESET_EVENTS).forEach(([k,v])=>{ official.days[k]=v; });
+  }
+}
+
+async function loadUsulan(){
+  try{
+    const snap = await db.ref("usulan_list").once("value");
+    const val = snap.val();
+    usulanList = val ? Object.values(val) : [];
+  }catch(e){
+    console.error(e);
+    usulanList = [];
+  }
+}
+
+async function saveOfficial(){
+  try{
+    await db.ref("official_data").set(official);
+    dirty = false;
+    return true;
+  }catch(e){
+    console.error(e);
+    alert("Gagal menyimpan ke server. Periksa koneksi internet Anda dan coba lagi.");
+    return false;
+  }
+}
+
+async function saveUsulan(){
+  try{
+    const obj = {};
+    usulanList.forEach(u=>{ obj[u.id] = u; });
+    await db.ref("usulan_list").set(obj);
+    return true;
+  }catch(e){
+    console.error(e);
+    alert("Gagal menyimpan usulan ke server. Coba lagi.");
+    return false;
+  }
+}
+
+async function muatUlang(){
+  if(dirty && isAdmin){
+    if(!confirm("Ada perubahan admin yang belum disimpan. Muat ulang dan buang perubahan?")) return;
+  }
+  document.getElementById("appRoot").style.display="none";
+  document.getElementById("loadingMsg").style.display="block";
+  await Promise.all([loadOfficial(), loadUsulan()]);
+  document.getElementById("loadingMsg").style.display="none";
+  document.getElementById("appRoot").style.display="block";
+  renderAll();
+}
+
+/* =========================================================
+   ADMIN LOGIN
+   ========================================================= */
+function loginAdmin(){
+  const pw = prompt("Masukkan kata sandi admin:");
+  if(pw === null) return;
+  if(pw === ADMIN_PASSWORD){
+    isAdmin = true;
+    updateRoleUI();
+    renderAll();
+  }else{
+    alert("Kata sandi salah.");
+  }
+}
+
+function logoutAdmin(){
+  if(dirty){
+    if(!confirm("Ada perubahan yang belum disimpan. Keluar dan buang perubahan?")) return;
+  }
+  isAdmin = false;
+  dirty = false;
+  updateRoleUI();
+  renderAll();
+}
+
+function updateRoleUI(){
+  document.getElementById("roleBadge").textContent = isAdmin ? "Mode: Admin (dapat mengubah kalender resmi)" : "Mode: Publik (lihat & usulkan)";
+  document.getElementById("roleBadge").className = "badge " + (isAdmin ? "admin" : "public");
+  document.getElementById("loginBtn").style.display = isAdmin ? "none" : "inline-block";
+  document.getElementById("logoutBtn").style.display = isAdmin ? "inline-block" : "none";
+  document.getElementById("adminControls").style.display = isAdmin ? "block" : "none";
+  document.getElementById("publicControls").style.display = isAdmin ? "none" : "block";
+  ["kop1","kop2","kop3"].forEach(id=>{
+    document.getElementById(id).contentEditable = isAdmin ? "true" : "false";
+  });
+}
+
+/* =========================================================
+   PICKER WARNA & POLA
+   ========================================================= */
+function renderPickers(){
+  const cp = document.getElementById("colorPicker");
+  cp.innerHTML = "";
+  for(let i=1;i<=21;i++){
+    const span=document.createElement("span");
+    span.className="color-btn c"+i+(selectedColor==="c"+i?" selected":"");
+    span.title = colorLabels["c"+i] || ("Warna "+i);
+    if(isAdmin) span.onclick=()=>{selectedColor="c"+i; renderPickers();};
+    cp.appendChild(span);
+  }
+  const pp = document.getElementById("patternPicker");
+  pp.innerHTML = "";
+  for(let i=1;i<=16;i++){
+    const span=document.createElement("span");
+    span.className="color-btn p"+i+(selectedPattern==="p"+i?" selected":"");
+    span.title="Pola "+i;
+    if(isAdmin) span.onclick=()=>{selectedPattern = (selectedPattern==="p"+i) ? "" : "p"+i; renderPickers();};
+    pp.appendChild(span);
+  }
+}
+
+/* =========================================================
+   KOP
+   ========================================================= */
+function bindKop(){
+  ["kop1","kop2","kop3"].forEach(id=>{
+    const el=document.getElementById(id);
+    el.innerHTML = official[id] || el.innerHTML;
+    el.oninput=function(){
+      if(!isAdmin) return;
+      official[id]=el.innerHTML;
+      dirty=true;
+    };
+  });
+}
+
+/* =========================================================
+   YEAR / MODE SELECT
+   ========================================================= */
+function bindControls(){
+  const startYear=document.getElementById("startYear");
+  if(startYear.options.length===0){
+    for(let y=2020;y<=2035;y++){
+      const o=document.createElement("option");
+      o.value=y;o.text=y;
+      startYear.appendChild(o);
+    }
+  }
+  startYear.value = official.tahunMulai;
+  startYear.onchange=function(){
+    if(!isAdmin) return;
+    official.tahunMulai = parseInt(this.value);
+    dirty=true;
+    renderCalendar();
+  };
+
+  const modeKerja=document.getElementById("modeKerja");
+  modeKerja.value = official.modeKerja;
+  modeKerja.onchange=function(){
+    if(!isAdmin) return;
+    official.modeKerja = parseInt(this.value);
+    dirty=true;
+    renderCalendar();
+  };
+}
+
+/* =========================================================
+   FORMAT TEXT (catatan)
+   ========================================================= */
+function formatText(cmd,val=null){
+  if(!isAdmin) return;
+  document.execCommand(cmd,false,val);
+  if(activeEditor) activeEditor.focus();
+}
+function setFont(font){
+  if(!isAdmin) return;
+  document.execCommand("fontName", false, font);
+  if(activeEditor) activeEditor.focus();
+}
+function resizeNote(change){
+  if(!isAdmin || !activeEditor) return;
+  let h=parseInt(activeEditor.style.height||120);
+  h+=change;
+  if(h<80)h=80;
+  if(h>500)h=500;
+  activeEditor.style.height=h+"px";
+  const key=activeEditor.getAttribute("data-key");
+  official.noteHeights[key]=h;
+  dirty=true;
+}
+
+/* =========================================================
+   RESET PER BULAN (admin)
+   ========================================================= */
+function resetPerBulan(){
+  if(!isAdmin) return;
+  let input = prompt("Masukkan bulan yang ingin direset.\n\nContoh:\n7 = Juli semua tahun\n7a = Juli tahun akhir\n7b = Juli tahun awal");
+  if(!input) return;
+  input = input.toLowerCase().trim();
+
+  let resetTahunAkhir=false, resetTahunAwal=false;
+  if(input.includes("a")){resetTahunAkhir=true; input=input.replace("a","");}
+  if(input.includes("b")){resetTahunAwal=true; input=input.replace("b","");}
+
+  let bulan=parseInt(input)-1;
+  if(isNaN(bulan)||bulan<0||bulan>11){alert("Bulan tidak valid"); return;}
+
+  let tahunAwal=parseInt(official.tahunMulai);
+  let tahunAkhir=tahunAwal+1;
+
+  Object.keys(official.days).forEach(key=>{
+    const m=key.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if(!m) return;
+    const tahun=parseInt(m[1]), bln=parseInt(m[2]);
+    const cocokTahun = resetTahunAkhir ? (tahun===tahunAkhir) : resetTahunAwal ? (tahun===tahunAwal) : true;
+    if(bln===bulan && cocokTahun) delete official.days[key];
+  });
+
+  Object.keys(official.notes).forEach(key=>{
+    const m=key.match(/^note-(\d{4})-(\d{1,2})$/);
+    if(!m) return;
+    const tahun=parseInt(m[1]), bln=parseInt(m[2]);
+    const cocokTahun = resetTahunAkhir ? (tahun===tahunAkhir) : resetTahunAwal ? (tahun===tahunAwal) : true;
+    if(bln===bulan && cocokTahun){ delete official.notes[key]; delete official.noteHeights[key]; }
+  });
+
+  dirty=true;
+  alert("Data bulan berhasil direset (belum tersimpan ke server — klik Simpan).");
+  renderCalendar();
+}
+
+/* =========================================================
+   ZOOM
+   ========================================================= */
+function zoomTanggal(a){
+  official.zoom = (official.zoom||11)+a;
+  if(official.zoom<9) official.zoom=9;
+  if(official.zoom>22) official.zoom=22;
+  if(isAdmin) dirty=true;
+  renderCalendar();
+}
+
+/* =========================================================
+   RENDER KALENDER
+   ========================================================= */
+function renderCalendar(){
+  const container=document.getElementById("container");
+  const summary=document.getElementById("summary");
+  container.innerHTML="";
+
+  let y=parseInt(official.tahunMulai);
+  let mode=parseInt(official.modeKerja);
+  let totalHari=0, totalMinggu=0;
+
+  let academic=[
+   {m:6,y:y},{m:7,y:y},{m:8,y:y},{m:9,y:y},{m:10,y:y},{m:11,y:y},
+   {m:0,y:y+1},{m:1,y:y+1},{m:2,y:y+1},{m:3,y:y+1},{m:4,y:y+1},{m:5,y:y+1},
+   {m:6,y:y+1}
+  ];
+
+  academic.forEach(item=>{
+    const box=document.createElement("div");
+    box.className="month";
+
+    const title=document.createElement("h3");
+    title.innerText=months[item.m]+" "+item.y;
+    box.appendChild(title);
+
+    const cal=document.createElement("div");
+    cal.className="calendar";
+
+    days.forEach(d=>{
+      const h=document.createElement("div");
+      h.className="day header";
+      h.innerText=d;
+      cal.appendChild(h);
+    });
+
+    let first=new Date(item.y,item.m,1).getDay();
+    let last=new Date(item.y,item.m+1,0).getDate();
+    let efektif=0;
+
+    for(let i=0;i<first;i++) cal.appendChild(document.createElement("div"));
+
+    for(let d=1; d<=last; d++){
+      const el=document.createElement("div");
+      el.className="day"+(isAdmin?"":" readonly");
+      el.innerText=d;
+      el.style.fontSize=(official.zoom||11)+"px";
+
+      let day=new Date(item.y,item.m,d).getDay();
+      let key=`${item.y}-${item.m}-${d}`;
+
+      if(day===0) el.classList.add("sunday");
+      if(day===6 && mode===5) el.classList.add("saturday");
+
+      const saved=official.days[key];
+      if(saved){
+        const [c,p]=saved.split("|");
+        if(c) el.classList.add(c);
+        if(p) el.classList.add(p);
+      }
+
+      const kerja=(mode===5)?(day!==0&&day!==6):(day!==0);
+      const warnaEfektif = saved && saved.includes("c21");
+      if(kerja && (!saved || warnaEfektif)) efektif++;
+
+      if(isAdmin){
+        el.onclick=function(){
+          if(official.days[key]){
+            delete official.days[key];
+          }else{
+            official.days[key]=selectedColor+"|"+selectedPattern;
+          }
+          dirty=true;
+          renderCalendar();
+        };
+      }
+      cal.appendChild(el);
+    }
+
+    let minggu=Math.ceil(efektif/mode);
+    totalHari+=efektif;
+    totalMinggu+=minggu;
+
+    box.appendChild(cal);
+
+    const ef=document.createElement("div");
+    ef.className="effective";
+    ef.innerHTML="Hari: "+efektif+" | Minggu: "+minggu;
+    box.appendChild(ef);
+
+    if(isAdmin){
+      const toolbar=document.createElement("div");
+      toolbar.className="toolbar";
+      toolbar.innerHTML=`
+        <button onclick="formatText('bold')">B</button>
+        <select onchange="setFont(this.value)">
+          <option value="">Font</option>
+          <option value="Arial">Arial</option>
+          <option value="Times New Roman">Times</option>
+          <option value="Calibri">Calibri</option>
+          <option value="Verdana">Verdana</option>
+          <option value="Tahoma">Tahoma</option>
+          <option value="Courier New">Courier</option>
+          <option value="Georgia">Georgia</option>
+        </select>
+        <button onclick="formatText('fontSize',1)">Kecil</button>
+        <button onclick="formatText('fontSize',3)">Normal</button>
+        <button onclick="formatText('fontSize',5)">Besar</button>
+        <button onclick="formatText('foreColor','#000000')">Hitam</button>
+        <button onclick="formatText('foreColor','#e74c3c')">Merah</button>
+        <button onclick="formatText('foreColor','#2980b9')">Biru</button>
+        <button onclick="formatText('foreColor','#27ae60')">Hijau</button>
+        <button onclick="resizeNote(20)">Tinggi +</button>
+        <button onclick="resizeNote(-20)">Tinggi -</button>
+      `;
+      box.appendChild(toolbar);
+    }
+
+    const editor=document.createElement("div");
+    editor.className="note-editor"+(isAdmin?"":" readonly");
+    editor.contentEditable = isAdmin ? "true" : "false";
+
+    const noteKey=`note-${item.y}-${item.m}`;
+    editor.setAttribute("data-key",noteKey);
+    editor.innerHTML = official.notes[noteKey] || "";
+
+    const savedHeight = official.noteHeights[noteKey];
+    editor.style.height = savedHeight ? savedHeight+"px" : "120px";
+
+    editor.onfocus=function(){ activeEditor=editor; };
+    editor.oninput=function(){
+      if(!isAdmin) return;
+      official.notes[noteKey]=editor.innerHTML;
+      dirty=true;
+    };
+
+    box.appendChild(editor);
+    container.appendChild(box);
+  });
+
+  summary.innerHTML="Total Hari: "+totalHari+" | Total Minggu: "+totalMinggu;
+}
+
+/* =========================================================
+   SIMPAN (admin)
+   ========================================================= */
+async function simpanData(){
+  if(!isAdmin) return;
+  const ok = await saveOfficial();
+  if(ok) alert("Data kalender resmi berhasil disimpan ke server.");
+}
+
+/* =========================================================
+   FORM USULAN
+   ========================================================= */
+function isiDropdownWarna(){
+  const sel=document.getElementById("fWarna");
+  sel.innerHTML="";
+  for(let i=1;i<=21;i++){
+    const opt=document.createElement("option");
+    opt.value="c"+i;
+    opt.textContent = "Warna "+i+(colorLabels["c"+i] ? " — "+colorLabels["c"+i] : "");
+    sel.appendChild(opt);
+  }
+}
+
+async function kirimUsulan(){
+  const nama = document.getElementById("fNama").value.trim();
+  const warna = document.getElementById("fWarna").value;
+  const mulai = document.getElementById("fMulai").value;
+  const selesai = document.getElementById("fSelesai").value || mulai;
+  const ket = document.getElementById("fKet").value.trim();
+
+  if(!nama){ alert("Nama pengusul wajib diisi."); return; }
+  if(!mulai){ alert("Tanggal mulai wajib diisi."); return; }
+  if(!ket){ alert("Keterangan kegiatan wajib diisi."); return; }
+  if(new Date(selesai) < new Date(mulai)){ alert("Tanggal selesai tidak boleh sebelum tanggal mulai."); return; }
+
+  await loadUsulan();
+
+  usulanList.push({
+    id: "u_"+Date.now()+"_"+Math.random().toString(36).slice(2,7),
+    nama, warna, mulai, selesai, ket,
+    waktu: new Date().toISOString()
+  });
+
+  const ok = await saveUsulan();
+  if(ok){
+    alert("Usulan berhasil dikirim. Terima kasih!");
+    document.getElementById("fNama").value="";
+    document.getElementById("fMulai").value="";
+    document.getElementById("fSelesai").value="";
+    document.getElementById("fKet").value="";
+    renderUsulanList();
+  }
+}
+
+/* =========================================================
+   DAFTAR USULAN
+   ========================================================= */
+function formatTanggalID(iso){
+  if(!iso) return "-";
+  const [Y,M,D]=iso.split("-").map(Number);
+  return D+" "+months[M-1]+" "+Y;
+}
+
+function renderUsulanList(){
+  const wrap=document.getElementById("usulanList");
+  const countBadge=document.getElementById("usulanCount");
+  wrap.innerHTML="";
+
+  if(usulanList.length===0){
+    wrap.innerHTML='<div class="empty-note">Belum ada usulan yang masuk.</div>';
+    countBadge.style.display="none";
+    return;
+  }
+
+  countBadge.style.display="inline-block";
+  countBadge.textContent = usulanList.length+" usulan";
+
+  const sorted=[...usulanList].sort((a,b)=> new Date(a.mulai) - new Date(b.mulai));
+
+  sorted.forEach(u=>{
+    const card=document.createElement("div");
+    card.className="usulan-card";
+
+    const info=document.createElement("div");
+    info.className="info";
+    info.innerHTML=`
+      <b><span class="swatch ${u.warna}"></span>${escapeHtml(u.nama)}</b>
+      <div class="meta">${formatTanggalID(u.mulai)}${u.selesai && u.selesai!==u.mulai ? " s.d. "+formatTanggalID(u.selesai) : ""}</div>
+      <div class="ket">${escapeHtml(u.ket)}</div>
+    `;
+    card.appendChild(info);
+
+    if(isAdmin){
+      const actions=document.createElement("div");
+      actions.className="actions";
+
+      const btnTerapkan=document.createElement("button");
+      btnTerapkan.className="success";
+      btnTerapkan.textContent="✅ Terapkan";
+      btnTerapkan.onclick=()=>terapkanUsulan(u.id);
+
+      const btnHapus=document.createElement("button");
+      btnHapus.className="danger";
+      btnHapus.textContent="🗑️ Hapus";
+      btnHapus.onclick=()=>hapusUsulan(u.id);
+
+      actions.appendChild(btnTerapkan);
+      actions.appendChild(btnHapus);
+      card.appendChild(actions);
+    }
+
+    wrap.appendChild(card);
+  });
+}
+
+function escapeHtml(s){
+  const d=document.createElement("div");
+  d.innerText=s;
+  return d.innerHTML;
+}
+
+async function terapkanUsulan(id){
+  if(!isAdmin) return;
+  await loadUsulan();
+  const u=usulanList.find(x=>x.id===id);
+  if(!u){ alert("Usulan tidak ditemukan (mungkin sudah dihapus)."); renderUsulanList(); return; }
+
+  if(!confirm(`Terapkan usulan dari ${u.nama} (${formatTanggalID(u.mulai)}${u.selesai!==u.mulai?" s.d. "+formatTanggalID(u.selesai):""}) ke kalender resmi?`)) return;
+
+  const start=new Date(u.mulai+"T00:00:00");
+  const end=new Date(u.selesai+"T00:00:00");
+  for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)){
+    const key=`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    official.days[key]= u.warna+"|";
+  }
+  dirty=true;
+
+  usulanList = usulanList.filter(x=>x.id!==id);
+  const okUsulan = await saveUsulan();
+  const okOfficial = await saveOfficial();
+
+  renderCalendar();
+  renderUsulanList();
+
+  if(okUsulan && okOfficial){
+    alert("Usulan diterapkan dan kalender resmi tersimpan.");
+  }
+}
+
+async function hapusUsulan(id){
+  if(!isAdmin) return;
+  if(!confirm("Hapus usulan ini?")) return;
+  await loadUsulan();
+  usulanList = usulanList.filter(x=>x.id!==id);
+  await saveUsulan();
+  renderUsulanList();
+}
+
+/* =========================================================
+   RENDER ALL
+   ========================================================= */
+function renderAll(){
+  updateRoleUI();
+  renderPickers();
+  bindKop();
+  bindControls();
+  renderCalendar();
+  renderUsulanList();
+}
+
+/* =========================================================
+   INIT
+   ========================================================= */
+(async function init(){
+  if(!firebaseSudahDiatur()){
+    document.getElementById("setupScreen").style.display="block";
+    return;
+  }
+
+  try{
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.database();
+  }catch(e){
+    console.error(e);
+    document.getElementById("setupScreen").style.display="block";
+    return;
+  }
+
+  document.getElementById("pageContent").style.display="block";
+  isiDropdownWarna();
+  await Promise.all([loadOfficial(), loadUsulan()]);
+  document.getElementById("loadingMsg").style.display="none";
+  document.getElementById("appRoot").style.display="block";
+  renderAll();
+})();
+</script>
+</body>
+</html>
