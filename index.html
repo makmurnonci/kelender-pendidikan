@@ -1,910 +1,166 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kalender Pendidikan</title>
-
-<!-- Firebase (dibutuhkan agar data usulan & kalender bisa dibagikan ke semua orang saat di-hosting di GitHub Pages) -->
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dashboard SK Pembagian Tugas Pengawas</title>
 <style>
-body{font-family:Arial;background:#f4f7fb;padding:20px;color:#2d3436}
-h1{text-align:center;margin-bottom:4px}
-.controls{text-align:center;margin-bottom:15px}
-select,button,input{padding:8px;margin:5px;font-size:14px;border-radius:6px;border:1px solid #ccc}
-button{cursor:pointer;background:#3498db;color:#fff;border:none}
-button:hover{background:#2980b9}
-button.secondary{background:#7f8c8d}
-button.secondary:hover{background:#636e72}
-button.danger{background:#e74c3c}
-button.danger:hover{background:#c0392b}
-button.success{background:#27ae60}
-button.success:hover{background:#1e8449}
-
-.year-container{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}
-.month{background:#fff;padding:10px;border-radius:10px;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
-.month h3{text-align:center}
-.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
-
-.day{padding:3px;font-size:11px;text-align:center;border-radius:4px;background:#ecf0f1;cursor:pointer}
-.day.readonly{cursor:default}
-.header{background:#3498db;color:#fff;font-weight:bold}
-.sunday{background:#e74c3c;color:#fff}
-.saturday{background:#f39c12;color:#fff}
-
-.c1{background:#8e44ad;color:#fff} .c2{background:#16a085;color:#fff} .c3{background:#d35400;color:#fff}
-.c4{background:#2c3e50;color:#fff} .c5{background:#e84393;color:#fff} .c6{background:#0984e3;color:#fff}
-.c7{background:#00b894;color:#fff} .c8{background:#fdcb6e;color:#000} .c9{background:#6c5ce7;color:#fff}
-.c10{background:#e17055;color:#fff} .c11{background:#00cec9;color:#000} .c12{background:#fab1a0;color:#000}
-.c13{background:#1abc9c;color:#fff} .c14{background:#2ecc71;color:#fff} .c15{background:#27ae60;color:#fff}
-.c16{background:#2980b9;color:#fff} .c17{background:#8e44ad;color:#fff} .c18{background:#c0392b;color:#fff}
-.c19{background:#7f8c8d;color:#fff} .c20{background:#f1c40f;color:#000} .c21{background:#ffffff;border:2px solid #2d3436;color:#000}
-
-.color-btn{display:inline-block;width:20px;height:20px;border-radius:50%;margin:3px;cursor:pointer;border:1px solid #ccc}
-.color-btn.selected{outline:3px solid #2d3436;outline-offset:1px}
-
-.note-editor{width:100%;min-height:120px;border:1px solid #ccc;padding:8px;background:#fff;box-sizing:border-box}
-.note-editor.readonly{background:#f9f9f9;color:#555}
-.toolbar button{margin:2px;padding:4px;font-size:11px}
-
-.effective{text-align:center;font-size:12px;margin-top:5px}
-.summary{text-align:center;margin-top:15px;font-weight:bold}
-.footer{text-align:center;margin-top:20px;font-weight:bold;font-size:12px;color:#636e72}
-
-.p1{background-image: repeating-linear-gradient(45deg, rgba(0,0,0,0.2) 2px, transparent 2px, transparent 6px);}
-.p2{background-image: repeating-linear-gradient(-45deg, rgba(0,0,0,0.2) 2px, transparent 2px, transparent 6px);}
-.p3{background-image: repeating-linear-gradient(90deg, rgba(0,0,0,0.2) 2px, transparent 2px, transparent 6px);}
-.p4{background-image: radial-gradient(#000 1px, transparent 1px);background-size:6px 6px;}
-.p5{background-image: linear-gradient(#000 1px, transparent 1px),linear-gradient(90deg,#000 1px,transparent 1px);background-size:6px 6px;}
-.p6{background: repeating-linear-gradient(45deg,#fff3 0 4px,#0003 4px 8px);}
-.p7{background: repeating-linear-gradient(0deg,#0002 0 2px,transparent 2px 6px);}
-.p8{background: repeating-linear-gradient(90deg,#0002 0 2px,transparent 2px 6px);}
-.p9{background-image: repeating-linear-gradient(135deg, rgba(0,0,0,0.15) 1px, transparent 1px, transparent 5px);}
-.p10{background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.3) 2px, transparent 2px, transparent 8px);}
-.p11{background-image: radial-gradient(circle, rgba(0,0,0,0.2) 1px, transparent 1px);background-size: 8px 8px;}
-.p12{background-image: linear-gradient(45deg, rgba(0,0,0,0.15) 25%, transparent 25%, transparent 75%, rgba(0,0,0,0.15) 75%);background-size: 10px 10px;}
-.p13{background-image: repeating-linear-gradient(0deg, rgba(0,0,0,0.2) 1px, transparent 1px, transparent 4px);}
-.p14{background-image: repeating-linear-gradient(90deg, rgba(0,0,0,0.2) 1px, transparent 1px, transparent 4px);}
-.p15{background-image: repeating-linear-gradient(60deg, rgba(0,0,0,0.15) 2px, transparent 2px, transparent 6px);}
-.p16{background-image: repeating-linear-gradient(-60deg, rgba(0,0,0,0.15) 2px, transparent 2px, transparent 6px);}
-
-.topbar{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
-.badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:bold}
-.badge.admin{background:#27ae60;color:#fff}
-.badge.public{background:#95a5a6;color:#fff}
-.badge.pending{background:#e67e22;color:#fff}
-.badge.error{background:#e74c3c;color:#fff}
-
-.panel{max-width:900px;margin:20px auto;background:#fff;border-radius:10px;padding:18px;box-shadow:0 2px 6px rgba(0,0,0,0.1)}
-.panel h2{margin-top:0;text-align:center;font-size:18px}
-.panel p.hint{text-align:center;font-size:12px;color:#636e72;margin-top:-8px}
-
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.form-grid label{font-size:12px;font-weight:bold;display:block;margin-bottom:3px}
-.form-grid .full{grid-column:1/3}
-.form-grid input,.form-grid select,.form-grid textarea{width:100%;box-sizing:border-box;margin:0}
-.form-grid textarea{min-height:60px;font-family:Arial}
-.form-actions{text-align:center;margin-top:10px}
-
-.swatch{display:inline-block;width:14px;height:14px;border-radius:50%;vertical-align:middle;margin-right:5px;border:1px solid #ccc}
-
-.usulan-list{margin-top:15px;display:flex;flex-direction:column;gap:10px}
-.usulan-card{border:1px solid #e0e0e0;border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
-.usulan-card .info{flex:1;min-width:200px}
-.usulan-card .info b{font-size:14px}
-.usulan-card .meta{font-size:11px;color:#636e72;margin-top:2px}
-.usulan-card .ket{font-size:13px;margin-top:5px}
-.usulan-card .actions{display:flex;gap:6px;flex-wrap:wrap}
-.usulan-card .actions button{margin:0;font-size:12px;padding:6px 10px}
-.empty-note{text-align:center;color:#636e72;font-size:13px;padding:10px}
-
-.loading{text-align:center;padding:30px;font-size:14px;color:#636e72}
-
-.setup-box{max-width:700px;margin:40px auto;background:#fff;border-radius:10px;padding:25px 30px;box-shadow:0 2px 8px rgba(0,0,0,0.15);line-height:1.6}
-.setup-box h2{margin-top:0}
-.setup-box code{background:#f1f2f6;padding:2px 6px;border-radius:4px;font-size:13px}
-.setup-box pre{background:#2d3436;color:#f1f2f6;padding:12px;border-radius:8px;overflow-x:auto;font-size:12px}
-.setup-box ol{padding-left:20px}
-.setup-box li{margin-bottom:10px}
-
-@media print {
-  .controls, .color-btn, .toolbar, .topbar, .panel, button, select { display: none !important; }
-  body { background: white; padding: 0; }
-  .month { box-shadow: none; border: 1px solid #ccc; }
-}
-
-@media (max-width:700px){
-  .year-container{grid-template-columns:1fr}
-  .form-grid{grid-template-columns:1fr}
-  .form-grid .full{grid-column:1}
-}
-</style>
-</head>
-
-<body>
-
-<!-- ======================================================
-     LAYAR PENGATURAN (muncul jika Firebase belum dikonfigurasi)
-     ====================================================== -->
-<div id="setupScreen" class="setup-box" style="display:none">
-  <h2>⚙️ Sekali Saja: Hubungkan ke Firebase</h2>
-  <p>Agar kalender ini bisa dipakai bersama-sama (usulan tersimpan untuk semua orang), Anda perlu membuat database gratis di Firebase (milik Google), lalu tempelkan kode konfigurasinya di file ini.</p>
-  <ol>
-    <li>Buka <b>console.firebase.google.com</b>, login dengan akun Google, klik <b>Add project</b> / Tambah project, beri nama bebas (mis. <code>kalender-pendidikan</code>), lalu selesaikan pembuatan project.</li>
-    <li>Di menu kiri, buka <b>Build → Realtime Database</b> → klik <b>Create Database</b>. Pilih lokasi server (mis. Singapore), lalu pilih mode <b>Start in test mode</b> → Enable.</li>
-    <li>Di menu kiri, buka <b>Project settings</b> (ikon gerigi) → scroll ke bawah ke bagian <b>Your apps</b> → klik ikon <code>&lt;/&gt;</code> (Web) → beri nama app → <b>Register app</b>.</li>
-    <li>Firebase akan menampilkan kode <code>firebaseConfig</code>. Salin seluruh isinya.</li>
-    <li>Buka file HTML ini dengan editor teks (Notepad/VS Code), cari bagian <code>FIREBASE_CONFIG</code> di dekat awal tag <code>&lt;script&gt;</code> paling bawah, dan ganti isinya dengan yang Anda salin dari Firebase.</li>
-    <li>Simpan file, lalu upload ulang ke GitHub (Add file → Upload files → Commit changes, timpa file lama). Tunggu 1 menit, refresh halamannya.</li>
-  </ol>
-  <p style="font-size:12px;color:#636e72">Catatan: mode "test" pada Realtime Database berarti siapa pun yang tahu alamat database bisa membaca/menulis data secara langsung (bukan hanya lewat halaman ini). Ini cukup aman untuk pemakaian internal sekolah, tapi bukan pengamanan tingkat tinggi. Anda bisa memperketat aturan akses nanti lewat menu <code>Rules</code> di Firebase jika diperlukan.</p>
+:root{--bg:#f5f6f8;--sf:#fff;--tx:#1d2330;--mu:#667085;--bd:#dde1e8;--ac:#1d5fd1;--ac2:#e8f0fd;--ok:#157347;--no:#b42318;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#14171d;--sf:#1e222b;--tx:#e8eaef;--mu:#98a1b3;--bd:#333948;--ac:#6ea2ff;--ac2:#1f2b45;--ok:#5fd39a;--no:#ff8a80}}
+:root[data-theme=dark]{--bg:#14171d;--sf:#1e222b;--tx:#e8eaef;--mu:#98a1b3;--bd:#333948;--ac:#6ea2ff;--ac2:#1f2b45;--ok:#5fd39a;--no:#ff8a80}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.w{max-width:980px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:0}.sub{color:var(--mu);font-size:13px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.tabs{display:flex;gap:6px;margin-bottom:12px}
+button,select,input{font:inherit;color:var(--tx)}
+.tab,.btn{border:1px solid var(--bd);background:var(--sf);padding:8px 14px;border-radius:8px;cursor:pointer}
+.tab.on,.btn.p{background:var(--ac);border-color:var(--ac);color:#fff}
+.btn:disabled{opacity:.5;cursor:default}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:14px}
+label{display:block;font-size:13px;color:var(--mu);margin:10px 0 4px}
+input[type=text],input[type=password],select{width:100%;padding:9px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg)}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}@media(max-width:640px){.g{grid-template-columns:1fr}}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.chip{padding:4px 12px;border-radius:99px;border:1px solid var(--bd);background:var(--bg);cursor:pointer;font-size:13px}.chip.on{background:var(--ac2);border-color:var(--ac);color:var(--ac)}
+.lst{max-height:360px;overflow:auto;border:1px solid var(--bd);border-radius:8px}
+.it{display:flex;gap:10px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--bd);cursor:pointer}.it:last-child{border:0}
+.it.dis{opacity:.5;cursor:not-allowed}.it small{color:var(--mu)}.it .tk{margin-left:auto;color:var(--no);font-size:12px;text-align:right}
+.msg{padding:10px 12px;border-radius:8px;background:var(--ac2);margin-bottom:12px;font-size:14px}
+.ok{color:var(--ok)}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between;margin-top:12px}
+#sk{background:#fff;color:#000;padding:28px 34px;font:13px/1.45 "Times New Roman",serif;border:1px solid var(--bd);border-radius:6px;overflow-x:auto}
+#sk .c{text-align:center}#sk .kop{border-bottom:3px double #000;padding-bottom:6px;margin-bottom:12px}
+#sk table{border-collapse:collapse;width:100%}#sk .l td{vertical-align:top;padding:1px 3px}
+#sk .t th,#sk .t td{border:1px solid #000;padding:3px 6px;vertical-align:top}#sk .t th{text-align:center}
+#sk p{margin:6px 0;text-align:justify}
+@media print{@page{size:A4;margin:15mm}body{background:#fff}.no{display:none!important}.w{padding:0;max-width:none}#sk{border:0;padding:0}#sk .pb{page-break-before:always}}
+</style><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script></head><body><div class="w" id="lg" hidden style="max-width:420px"><div class="card"><h1 style="margin-bottom:2px">Dashboard SK Pengawas</h1><div class="sub">Dinas Pendidikan dan Kebudayaan Kota Parepare</div>
+<div id="lgf"><label>Email</label><input type="text" id="le" autocomplete="username"><label>Kata sandi</label><input type="password" id="lp" autocomplete="current-password">
+<div class="row" style="justify-content:flex-start"><button class="btn p" id="lin">Masuk</button><button class="btn" id="lup">Daftar</button><button class="btn" id="lgo">Masuk dengan Google</button></div>
+<div style="margin-top:10px"><a href="#" id="lrs" class="sub">Lupa kata sandi?</a></div></div>
+<div id="vf" hidden><p>Kami mengirim tautan verifikasi ke <b id="ve"></b>. Klik tautan di email tersebut, lalu tekan tombol di bawah.</p><div class="row" style="justify-content:flex-start"><button class="btn p" id="vk">Saya sudah verifikasi</button><button class="btn" id="vr">Kirim ulang</button><button class="btn" id="vo">Keluar</button></div><div id="vm" class="sub" style="margin-top:8px"></div></div>
+<div id="lm" style="color:var(--no);margin-top:10px;font-size:14px"></div></div></div>
+<div class="w" id="app" hidden>
+<div class="top no"><div><h1>Dashboard SK Pembagian Tugas Pengawas</h1><div class="sub">Dinas Pendidikan dan Kebudayaan Kota Parepare · TA 2026</div></div><div class="sub"><span id="who"></span> <button class="btn" id="out" style="padding:2px 10px">Keluar</button></div></div>
+<div id="note" class="msg no" hidden></div>
+<div class="tabs no"><button class="tab on" data-t="f">Data &amp; sekolah binaan saya</button><button class="tab" data-t="s">Pratinjau SK</button><button class="tab" data-t="e" id="te" hidden>Admin</button></div>
+<div id="f">
+<div class="card"><b>Data pengawas</b><div id="edw" hidden><label>Pengawas yang diedit (khusus admin)</label><select id="ed"></select><button class="btn" id="imp" hidden style="margin-top:8px">Impor semua pengawas dari Excel</button></div><div id="apx" class="sub" style="margin-top:8px"></div>
+<label>Isi otomatis dari data SK 2026 (opsional)</label><select id="pre"></select>
+<div class="g"><div><label>Nama lengkap (beserta gelar)</label><input type="text" id="nama"></div><div><label>NIP</label><input type="text" id="nip" placeholder="19690624 199512 1 003"></div>
+<div><label>Pangkat / golongan</label><select id="pk"></select></div><div><label>Jabatan</label><select id="jb"></select></div></div></div>
+<div class="card"><b>Sekolah binaan</b> <span class="sub">— centang sekolah yang menjadi tugas Anda. Sekolah yang sudah dipilih pengawas lain terkunci.</span>
+<input type="text" id="q" placeholder="Cari nama sekolah / NPSN…" style="margin-top:10px"><div class="chips" id="ch"></div><div class="lst" id="ls"></div>
+<details style="margin-top:10px"><summary style="cursor:pointer">+ Tambah sekolah baru</summary><div class="g"><div><label>Nama sekolah</label><input type="text" id="sn"></div><div><label>NPSN</label><input type="text" id="sp"></div><div><label>Jenjang</label><select id="sj"><option>TK</option><option>SD</option><option>SMP</option><option>Lainnya</option></select></div></div><button class="btn" id="sa" style="margin-top:10px">Tambah sekolah</button></details>
+<div class="row"><span id="cnt" class="sub"></span><span><span id="st" class="ok"></span> <button class="btn" id="dl" hidden>Hapus pengawas</button> <button class="btn p" id="sv">Simpan</button></span></div></div></div>
+<div id="s" hidden><div class="row no" style="margin:0 0 10px"><span class="sub" id="sc"></span><button class="btn p" onclick="print()">Cetak / Simpan PDF</button></div><div id="sk"></div>
+<div class="card no" style="margin-top:14px"><b>Usulan perubahan</b> <span class="sub">— ada yang perlu diubah di SK? Kirim usulan ke admin.</span><select id="uk" style="margin-top:8px"><option>Data pengawas / pangkat</option><option>Sekolah binaan</option><option>Teks SK</option><option>Lainnya</option></select><textarea id="ut" rows="3" maxlength="1000" placeholder="Tulis usulan Anda…" style="margin-top:8px;width:100%;padding:9px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit"></textarea><div class="row"><span id="us" class="ok"></span><button class="btn p" id="ub">Kirim usulan</button></div><div id="um" style="margin-top:8px"></div></div></div>
+<div id="e" hidden><div class="card" id="mnc" hidden><b>Menunggu persetujuan akses</b> <span class="sub">— pengawas yang sudah masuk, tetapi emailnya belum diizinkan.</span><div id="mnl" class="lst" style="margin-top:8px"></div></div>
+<div class="card"><b>Email pengawas yang diizinkan</b> <span class="sub">— hanya email di daftar ini yang bisa melihat data. Pengawas mendaftar/masuk dengan email yang sama.</span><textarea id="izt" rows="3" placeholder="satu email per baris" style="margin-top:8px;width:100%;padding:9px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit"></textarea><div class="row"><span id="izs" class="ok"></span><button class="btn p" id="izb">Tambahkan</button></div><div id="izl" class="lst" style="margin-top:8px"></div></div>
+<div class="card"><b>Persetujuan pengawas</b> <span class="sub">— hanya pengawas yang disetujui yang tampil di SK. Gunakan ▲▼ untuk mengatur urutan nama di SK.</span><div id="apl" class="lst" style="margin-top:8px"></div></div>
+<div class="card"><b>Usulan dari pengawas</b><div id="ual" class="lst" style="margin-top:8px"></div></div>
+<div class="card"><b>Edit teks SK</b><div id="skf"></div><div class="row"><button class="btn" id="rs">Kembalikan ke bawaan</button><span><span id="es" class="ok"></span> <button class="btn p" id="es2">Simpan teks SK</button></span></div></div></div>
 </div>
-
-<div id="pageContent" style="display:none">
-
-<div style="text-align:center;margin-bottom:10px">
-  <div contenteditable="false" id="kop1" style="font-weight:bold;font-size:18px">DINAS PENDIDIKAN</div>
-  <div contenteditable="false" id="kop2" style="font-size:16px">NAMA SEKOLAH</div>
-  <div contenteditable="false" id="kop3" style="font-size:14px">ALAMAT SEKOLAH</div>
-</div>
-
-<h1>KALENDER PENDIDIKAN</h1>
-
-<div class="topbar">
-  <span id="roleBadge" class="badge public">Mode: Publik (lihat & usulkan)</span>
-  <button id="loginBtn" class="secondary" onclick="loginAdmin()">🔒 Masuk Admin</button>
-  <button id="logoutBtn" class="secondary" style="display:none" onclick="logoutAdmin()">Keluar Admin</button>
-  <button class="secondary" onclick="muatUlang()">🔄 Muat Ulang Data</button>
-</div>
-
-<div id="loadingMsg" class="loading">Memuat data kalender…</div>
-
-<div id="appRoot" style="display:none">
-
-<div class="controls" id="adminControls" style="display:none">
-Tahun Ajaran Mulai:
-<select id="startYear"></select>
-
-Mode Hari Kerja:
-<select id="modeKerja">
-<option value="5">5 Hari</option>
-<option value="6">6 Hari</option>
-</select>
-
-<br>
-
-<button class="success" onclick="simpanData()">💾 Simpan ke Server</button>
-<button onclick="window.print()">🖨️ Cetak</button>
-<button class="secondary" onclick="resetPerBulan()">Reset Perbulan</button>
-<button class="secondary" onclick="zoomTanggal(1)">Zoom +</button>
-<button class="secondary" onclick="zoomTanggal(-1)">Zoom -</button>
-</div>
-
-<div class="controls" id="publicControls">
-<button onclick="window.print()">🖨️ Cetak</button>
-<button class="secondary" onclick="zoomTanggal(1)">Zoom +</button>
-<button class="secondary" onclick="zoomTanggal(-1)">Zoom -</button>
-</div>
-
-<div style="text-align:center" id="colorPicker"></div>
-<div style="text-align:center;font-size:12px;margin-top:5px">Warna putih garis hitam = tidak mengurangi hari efektif</div>
-<div style="text-align:center;margin-top:10px" id="patternPicker"></div>
-
-<div id="container" class="year-container"></div>
-<div id="summary" class="summary"></div>
-
-<div class="panel">
-  <h2>📝 Usulkan Tanggal / Kegiatan</h2>
-  <p class="hint">Usulan akan dikirim ke admin. Kalender resmi hanya berubah setelah admin menyetujui.</p>
-  <div class="form-grid">
-    <div>
-      <label>Nama Pengusul</label>
-      <input type="text" id="fNama" placeholder="Nama Anda">
-    </div>
-    <div>
-      <label>Warna Kategori</label>
-      <select id="fWarna"></select>
-    </div>
-    <div>
-      <label>Tanggal Mulai</label>
-      <input type="date" id="fMulai">
-    </div>
-    <div>
-      <label>Tanggal Selesai</label>
-      <input type="date" id="fSelesai">
-    </div>
-    <div class="full">
-      <label>Keterangan Kegiatan</label>
-      <textarea id="fKet" placeholder="Contoh: Libur Hari Raya, Ujian Semester, dst."></textarea>
-    </div>
-  </div>
-  <div class="form-actions">
-    <button class="success" onclick="kirimUsulan()">📩 Kirim Usulan</button>
-  </div>
-</div>
-
-<div class="panel">
-  <h2>📋 Daftar Usulan <span id="usulanCount" class="badge pending" style="display:none"></span></h2>
-  <p class="hint">Menampilkan seluruh usulan yang masuk.</p>
-  <div id="usulanList" class="usulan-list"></div>
-</div>
-
-<div class="footer">Dibuat oleh Makmur Nonci</div>
-
-</div><!-- /appRoot -->
-</div><!-- /pageContent -->
-
 <script>
-/* =========================================================
-   KONFIGURASI FIREBASE
-   Ganti seluruh isi objek di bawah ini dengan kode
-   "firebaseConfig" yang Anda dapat dari Firebase Console.
-   ========================================================= */
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyCkXPmxVCWjYdgc1Ueu3fCgPsF8cFJ-NPA",
-  authDomain: "kalender-pendidikan-583e3.firebaseapp.com",
-  databaseURL: "https://kalender-pendidikan-583e3-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "kalender-pendidikan-583e3",
-  storageBucket: "kalender-pendidikan-583e3.firebasestorage.app",
-  messagingSenderId: "453679762444",
-  appId: "1:453679762444:web:bd0fd8265a2534226db229"
-};
-
-// Ganti kata sandi admin ini sesuai kebutuhan sekolah Anda.
-const ADMIN_PASSWORD = "admin2026";
-
-let db = null;
-let isAdmin = false;
-let selectedColor = "c1";
-let selectedPattern = "";
-let activeEditor = null;
-let dirty = false;
-
-let official = defaultOfficial();
-let usulanList = [];
-
-function defaultOfficial(){
-  return {
-    kop1: "DINAS PENDIDIKAN",
-    kop2: "NAMA SEKOLAH",
-    kop3: "ALAMAT SEKOLAH",
-    tahunMulai: 2026,
-    modeKerja: 5,
-    zoom: 11,
-    days: {},
-    notes: {},
-    noteHeights: {}
-  };
-}
-
-const PRESET_EVENTS = {
- "2026-6-1":"c1|p1","2026-6-2":"c1|p1","2026-6-3":"c1|p1","2026-6-4":"c1|p1","2026-6-5":"c1|p1",
- "2026-6-6":"c1|p1","2026-6-7":"c1|p1","2026-6-8":"c1|p1","2026-6-9":"c1|p1","2026-6-10":"c1|p1",
- "2026-6-13":"c2|p2","2026-6-14":"c2|p2","2026-6-15":"c2|p2","2026-6-16":"c2|p2","2026-6-17":"c2|p2",
- "2026-7-17":"c3|p3","2026-7-25":"c4|p4",
- "2026-9-1":"c3|p3","2026-9-28":"c3|p3",
- "2026-10-10":"c3|p3",
- "2026-11-7":"c5|p5","2026-11-8":"c5|p5","2026-11-9":"c5|p5","2026-11-10":"c5|p5","2026-11-11":"c5|p5",
- "2026-11-14":"c6|p6","2026-11-15":"c6|p6","2026-11-16":"c6|p6","2026-11-17":"c6|p6","2026-11-18":"c6|p6",
- "2026-11-19":"c6|p6","2026-11-20":"c6|p6","2026-11-21":"c6|p6","2026-11-22":"c6|p6",
- "2026-11-23":"c1|p1","2026-11-24":"c1|p1","2026-11-25":"c1|p1","2026-11-28":"c1|p1","2026-11-29":"c1|p1","2026-11-30":"c1|p1",
- "2027-0-1":"c3|p3","2027-0-5":"c4|p4",
- "2027-1-6":"c4|p4","2027-1-8":"c1|p1","2027-1-9":"c1|p1","2027-1-10":"c1|p1",
- "2027-2-5":"c1|p1","2027-2-6":"c1|p1","2027-2-7":"c1|p1","2027-2-8":"c1|p1",
- "2027-2-10":"c4|p4","2027-2-11":"c1|p1","2027-2-12":"c1|p1","2027-2-13":"c1|p1","2027-2-14":"c1|p1",
- "2027-2-15":"c1|p1","2027-2-16":"c1|p1","2027-2-17":"c1|p1","2027-2-18":"c1|p1","2027-2-19":"c1|p1",
- "2027-2-28":"c4|p4",
- "2027-3-5":"c7|p7","2027-3-30":"c7|p7",
- "2027-4-1":"c3|p3","2027-4-2":"c3|p3",
- "2027-4-5":"c1|p1","2027-4-6":"c1|p1",
- "2027-4-10":"c8|p8","2027-4-11":"c8|p8","2027-4-12":"c8|p8","2027-4-13":"c8|p8","2027-4-14":"c8|p8",
- "2027-4-17":"c1|p1","2027-4-18":"c1|p1","2027-4-20":"c4|p4",
- "2027-5-1":"c3|p3","2027-5-6":"c4|p4",
- "2027-5-14":"c5|p5","2027-5-15":"c5|p5","2027-5-16":"c5|p5","2027-5-17":"c5|p5","2027-5-18":"c5|p5",
- "2027-5-21":"c6|p6","2027-5-22":"c6|p6","2027-5-23":"c6|p6","2027-5-24":"c6|p6",
- "2027-5-25":"c1|p1","2027-5-28":"c1|p1","2027-5-29":"c1|p1","2027-5-30":"c1|p1",
- "2027-6-1":"c1|p1","2027-6-2":"c1|p1","2027-6-3":"c1|p1","2027-6-4":"c1|p1","2027-6-5":"c1|p1","2027-6-6":"c1|p1","2027-6-7":"c1|p1","2027-6-8":"c1|p1","2027-6-9":"c1|p1"
-};
-
-const months=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
-const days=["M","S","S","R","K","J","S"];
-const colorLabels = {
- c1:"Libur Umum",c2:"Libur Semester",c3:"Hari Besar",c4:"Hari Besar",c5:"Pekan Ujian",c6:"Pekan Ujian",
- c7:"Kegiatan Sekolah",c8:"Ujian Sekolah",c21:"Keterangan (tidak mengurangi hari efektif)"
-};
-
-/* =========================================================
-   FIREBASE HELPERS
-   ========================================================= */
-function firebaseSudahDiatur(){
-  return FIREBASE_CONFIG.apiKey && !FIREBASE_CONFIG.apiKey.includes("GANTI");
-}
-
-async function loadOfficial(){
-  try{
-    const snap = await db.ref("official_data").once("value");
-    const val = snap.val();
-    official = val ? Object.assign(defaultOfficial(), val) : defaultOfficial();
-    if(!val){
-      Object.entries(PRESET_EVENTS).forEach(([k,v])=>{ official.days[k]=v; });
-    }
-  }catch(e){
-    console.error(e);
-    official = defaultOfficial();
-    Object.entries(PRESET_EVENTS).forEach(([k,v])=>{ official.days[k]=v; });
-  }
-}
-
-async function loadUsulan(){
-  try{
-    const snap = await db.ref("usulan_list").once("value");
-    const val = snap.val();
-    usulanList = val ? Object.values(val) : [];
-  }catch(e){
-    console.error(e);
-    usulanList = [];
-  }
-}
-
-async function saveOfficial(){
-  try{
-    await db.ref("official_data").set(official);
-    dirty = false;
-    return true;
-  }catch(e){
-    console.error(e);
-    alert("Gagal menyimpan ke server. Periksa koneksi internet Anda dan coba lagi.");
-    return false;
-  }
-}
-
-async function saveUsulan(){
-  try{
-    const obj = {};
-    usulanList.forEach(u=>{ obj[u.id] = u; });
-    await db.ref("usulan_list").set(obj);
-    return true;
-  }catch(e){
-    console.error(e);
-    alert("Gagal menyimpan usulan ke server. Coba lagi.");
-    return false;
-  }
-}
-
-async function muatUlang(){
-  if(dirty && isAdmin){
-    if(!confirm("Ada perubahan admin yang belum disimpan. Muat ulang dan buang perubahan?")) return;
-  }
-  document.getElementById("appRoot").style.display="none";
-  document.getElementById("loadingMsg").style.display="block";
-  await Promise.all([loadOfficial(), loadUsulan()]);
-  document.getElementById("loadingMsg").style.display="none";
-  document.getElementById("appRoot").style.display="block";
-  renderAll();
-}
-
-/* =========================================================
-   ADMIN LOGIN
-   ========================================================= */
-function loginAdmin(){
-  const pw = prompt("Masukkan kata sandi admin:");
-  if(pw === null) return;
-  if(pw === ADMIN_PASSWORD){
-    isAdmin = true;
-    updateRoleUI();
-    renderAll();
-  }else{
-    alert("Kata sandi salah.");
-  }
-}
-
-function logoutAdmin(){
-  if(dirty){
-    if(!confirm("Ada perubahan yang belum disimpan. Keluar dan buang perubahan?")) return;
-  }
-  isAdmin = false;
-  dirty = false;
-  updateRoleUI();
-  renderAll();
-}
-
-function updateRoleUI(){
-  document.getElementById("roleBadge").textContent = isAdmin ? "Mode: Admin (dapat mengubah kalender resmi)" : "Mode: Publik (lihat & usulkan)";
-  document.getElementById("roleBadge").className = "badge " + (isAdmin ? "admin" : "public");
-  document.getElementById("loginBtn").style.display = isAdmin ? "none" : "inline-block";
-  document.getElementById("logoutBtn").style.display = isAdmin ? "inline-block" : "none";
-  document.getElementById("adminControls").style.display = isAdmin ? "block" : "none";
-  document.getElementById("publicControls").style.display = isAdmin ? "none" : "block";
-  ["kop1","kop2","kop3"].forEach(id=>{
-    document.getElementById(id).contentEditable = isAdmin ? "true" : "false";
-  });
-}
-
-/* =========================================================
-   PICKER WARNA & POLA
-   ========================================================= */
-function renderPickers(){
-  const cp = document.getElementById("colorPicker");
-  cp.innerHTML = "";
-  for(let i=1;i<=21;i++){
-    const span=document.createElement("span");
-    span.className="color-btn c"+i+(selectedColor==="c"+i?" selected":"");
-    span.title = colorLabels["c"+i] || ("Warna "+i);
-    if(isAdmin) span.onclick=()=>{selectedColor="c"+i; renderPickers();};
-    cp.appendChild(span);
-  }
-  const pp = document.getElementById("patternPicker");
-  pp.innerHTML = "";
-  for(let i=1;i<=16;i++){
-    const span=document.createElement("span");
-    span.className="color-btn p"+i+(selectedPattern==="p"+i?" selected":"");
-    span.title="Pola "+i;
-    if(isAdmin) span.onclick=()=>{selectedPattern = (selectedPattern==="p"+i) ? "" : "p"+i; renderPickers();};
-    pp.appendChild(span);
-  }
-}
-
-/* =========================================================
-   KOP
-   ========================================================= */
-function bindKop(){
-  ["kop1","kop2","kop3"].forEach(id=>{
-    const el=document.getElementById(id);
-    el.innerHTML = official[id] || el.innerHTML;
-    el.oninput=function(){
-      if(!isAdmin) return;
-      official[id]=el.innerHTML;
-      dirty=true;
-    };
-  });
-}
-
-/* =========================================================
-   YEAR / MODE SELECT
-   ========================================================= */
-function bindControls(){
-  const startYear=document.getElementById("startYear");
-  if(startYear.options.length===0){
-    for(let y=2020;y<=2035;y++){
-      const o=document.createElement("option");
-      o.value=y;o.text=y;
-      startYear.appendChild(o);
-    }
-  }
-  startYear.value = official.tahunMulai;
-  startYear.onchange=function(){
-    if(!isAdmin) return;
-    official.tahunMulai = parseInt(this.value);
-    dirty=true;
-    renderCalendar();
-  };
-
-  const modeKerja=document.getElementById("modeKerja");
-  modeKerja.value = official.modeKerja;
-  modeKerja.onchange=function(){
-    if(!isAdmin) return;
-    official.modeKerja = parseInt(this.value);
-    dirty=true;
-    renderCalendar();
-  };
-}
-
-/* =========================================================
-   FORMAT TEXT (catatan)
-   ========================================================= */
-function formatText(cmd,val=null){
-  if(!isAdmin) return;
-  document.execCommand(cmd,false,val);
-  if(activeEditor) activeEditor.focus();
-}
-function setFont(font){
-  if(!isAdmin) return;
-  document.execCommand("fontName", false, font);
-  if(activeEditor) activeEditor.focus();
-}
-function resizeNote(change){
-  if(!isAdmin || !activeEditor) return;
-  let h=parseInt(activeEditor.style.height||120);
-  h+=change;
-  if(h<80)h=80;
-  if(h>500)h=500;
-  activeEditor.style.height=h+"px";
-  const key=activeEditor.getAttribute("data-key");
-  official.noteHeights[key]=h;
-  dirty=true;
-}
-
-/* =========================================================
-   RESET PER BULAN (admin)
-   ========================================================= */
-function resetPerBulan(){
-  if(!isAdmin) return;
-  let input = prompt("Masukkan bulan yang ingin direset.\n\nContoh:\n7 = Juli semua tahun\n7a = Juli tahun akhir\n7b = Juli tahun awal");
-  if(!input) return;
-  input = input.toLowerCase().trim();
-
-  let resetTahunAkhir=false, resetTahunAwal=false;
-  if(input.includes("a")){resetTahunAkhir=true; input=input.replace("a","");}
-  if(input.includes("b")){resetTahunAwal=true; input=input.replace("b","");}
-
-  let bulan=parseInt(input)-1;
-  if(isNaN(bulan)||bulan<0||bulan>11){alert("Bulan tidak valid"); return;}
-
-  let tahunAwal=parseInt(official.tahunMulai);
-  let tahunAkhir=tahunAwal+1;
-
-  Object.keys(official.days).forEach(key=>{
-    const m=key.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-    if(!m) return;
-    const tahun=parseInt(m[1]), bln=parseInt(m[2]);
-    const cocokTahun = resetTahunAkhir ? (tahun===tahunAkhir) : resetTahunAwal ? (tahun===tahunAwal) : true;
-    if(bln===bulan && cocokTahun) delete official.days[key];
-  });
-
-  Object.keys(official.notes).forEach(key=>{
-    const m=key.match(/^note-(\d{4})-(\d{1,2})$/);
-    if(!m) return;
-    const tahun=parseInt(m[1]), bln=parseInt(m[2]);
-    const cocokTahun = resetTahunAkhir ? (tahun===tahunAkhir) : resetTahunAwal ? (tahun===tahunAwal) : true;
-    if(bln===bulan && cocokTahun){ delete official.notes[key]; delete official.noteHeights[key]; }
-  });
-
-  dirty=true;
-  alert("Data bulan berhasil direset (belum tersimpan ke server — klik Simpan).");
-  renderCalendar();
-}
-
-/* =========================================================
-   ZOOM
-   ========================================================= */
-function zoomTanggal(a){
-  official.zoom = (official.zoom||11)+a;
-  if(official.zoom<9) official.zoom=9;
-  if(official.zoom>22) official.zoom=22;
-  if(isAdmin) dirty=true;
-  renderCalendar();
-}
-
-/* =========================================================
-   RENDER KALENDER
-   ========================================================= */
-function renderCalendar(){
-  const container=document.getElementById("container");
-  const summary=document.getElementById("summary");
-  container.innerHTML="";
-
-  let y=parseInt(official.tahunMulai);
-  let mode=parseInt(official.modeKerja);
-  let totalHari=0, totalMinggu=0;
-
-  let academic=[
-   {m:6,y:y},{m:7,y:y},{m:8,y:y},{m:9,y:y},{m:10,y:y},{m:11,y:y},
-   {m:0,y:y+1},{m:1,y:y+1},{m:2,y:y+1},{m:3,y:y+1},{m:4,y:y+1},{m:5,y:y+1},
-   {m:6,y:y+1}
-  ];
-
-  academic.forEach(item=>{
-    const box=document.createElement("div");
-    box.className="month";
-
-    const title=document.createElement("h3");
-    title.innerText=months[item.m]+" "+item.y;
-    box.appendChild(title);
-
-    const cal=document.createElement("div");
-    cal.className="calendar";
-
-    days.forEach(d=>{
-      const h=document.createElement("div");
-      h.className="day header";
-      h.innerText=d;
-      cal.appendChild(h);
-    });
-
-    let first=new Date(item.y,item.m,1).getDay();
-    let last=new Date(item.y,item.m+1,0).getDate();
-    let efektif=0;
-
-    for(let i=0;i<first;i++) cal.appendChild(document.createElement("div"));
-
-    for(let d=1; d<=last; d++){
-      const el=document.createElement("div");
-      el.className="day"+(isAdmin?"":" readonly");
-      el.innerText=d;
-      el.style.fontSize=(official.zoom||11)+"px";
-
-      let day=new Date(item.y,item.m,d).getDay();
-      let key=`${item.y}-${item.m}-${d}`;
-
-      if(day===0) el.classList.add("sunday");
-      if(day===6 && mode===5) el.classList.add("saturday");
-
-      const saved=official.days[key];
-      if(saved){
-        const [c,p]=saved.split("|");
-        if(c) el.classList.add(c);
-        if(p) el.classList.add(p);
-      }
-
-      const kerja=(mode===5)?(day!==0&&day!==6):(day!==0);
-      const warnaEfektif = saved && saved.includes("c21");
-      if(kerja && (!saved || warnaEfektif)) efektif++;
-
-      if(isAdmin){
-        el.onclick=function(){
-          if(official.days[key]){
-            delete official.days[key];
-          }else{
-            official.days[key]=selectedColor+"|"+selectedPattern;
-          }
-          dirty=true;
-          renderCalendar();
-        };
-      }
-      cal.appendChild(el);
-    }
-
-    let minggu=Math.ceil(efektif/mode);
-    totalHari+=efektif;
-    totalMinggu+=minggu;
-
-    box.appendChild(cal);
-
-    const ef=document.createElement("div");
-    ef.className="effective";
-    ef.innerHTML="Hari: "+efektif+" | Minggu: "+minggu;
-    box.appendChild(ef);
-
-    if(isAdmin){
-      const toolbar=document.createElement("div");
-      toolbar.className="toolbar";
-      toolbar.innerHTML=`
-        <button onclick="formatText('bold')">B</button>
-        <select onchange="setFont(this.value)">
-          <option value="">Font</option>
-          <option value="Arial">Arial</option>
-          <option value="Times New Roman">Times</option>
-          <option value="Calibri">Calibri</option>
-          <option value="Verdana">Verdana</option>
-          <option value="Tahoma">Tahoma</option>
-          <option value="Courier New">Courier</option>
-          <option value="Georgia">Georgia</option>
-        </select>
-        <button onclick="formatText('fontSize',1)">Kecil</button>
-        <button onclick="formatText('fontSize',3)">Normal</button>
-        <button onclick="formatText('fontSize',5)">Besar</button>
-        <button onclick="formatText('foreColor','#000000')">Hitam</button>
-        <button onclick="formatText('foreColor','#e74c3c')">Merah</button>
-        <button onclick="formatText('foreColor','#2980b9')">Biru</button>
-        <button onclick="formatText('foreColor','#27ae60')">Hijau</button>
-        <button onclick="resizeNote(20)">Tinggi +</button>
-        <button onclick="resizeNote(-20)">Tinggi -</button>
-      `;
-      box.appendChild(toolbar);
-    }
-
-    const editor=document.createElement("div");
-    editor.className="note-editor"+(isAdmin?"":" readonly");
-    editor.contentEditable = isAdmin ? "true" : "false";
-
-    const noteKey=`note-${item.y}-${item.m}`;
-    editor.setAttribute("data-key",noteKey);
-    editor.innerHTML = official.notes[noteKey] || "";
-
-    const savedHeight = official.noteHeights[noteKey];
-    editor.style.height = savedHeight ? savedHeight+"px" : "120px";
-
-    editor.onfocus=function(){ activeEditor=editor; };
-    editor.oninput=function(){
-      if(!isAdmin) return;
-      official.notes[noteKey]=editor.innerHTML;
-      dirty=true;
-    };
-
-    box.appendChild(editor);
-    container.appendChild(box);
-  });
-
-  summary.innerHTML="Total Hari: "+totalHari+" | Total Minggu: "+totalMinggu;
-}
-
-/* =========================================================
-   SIMPAN (admin)
-   ========================================================= */
-async function simpanData(){
-  if(!isAdmin) return;
-  const ok = await saveOfficial();
-  if(ok) alert("Data kalender resmi berhasil disimpan ke server.");
-}
-
-/* =========================================================
-   FORM USULAN
-   ========================================================= */
-function isiDropdownWarna(){
-  const sel=document.getElementById("fWarna");
-  sel.innerHTML="";
-  for(let i=1;i<=21;i++){
-    const opt=document.createElement("option");
-    opt.value="c"+i;
-    opt.textContent = "Warna "+i+(colorLabels["c"+i] ? " — "+colorLabels["c"+i] : "");
-    sel.appendChild(opt);
-  }
-}
-
-async function kirimUsulan(){
-  const nama = document.getElementById("fNama").value.trim();
-  const warna = document.getElementById("fWarna").value;
-  const mulai = document.getElementById("fMulai").value;
-  const selesai = document.getElementById("fSelesai").value || mulai;
-  const ket = document.getElementById("fKet").value.trim();
-
-  if(!nama){ alert("Nama pengusul wajib diisi."); return; }
-  if(!mulai){ alert("Tanggal mulai wajib diisi."); return; }
-  if(!ket){ alert("Keterangan kegiatan wajib diisi."); return; }
-  if(new Date(selesai) < new Date(mulai)){ alert("Tanggal selesai tidak boleh sebelum tanggal mulai."); return; }
-
-  await loadUsulan();
-
-  usulanList.push({
-    id: "u_"+Date.now()+"_"+Math.random().toString(36).slice(2,7),
-    nama, warna, mulai, selesai, ket,
-    waktu: new Date().toISOString()
-  });
-
-  const ok = await saveUsulan();
-  if(ok){
-    alert("Usulan berhasil dikirim. Terima kasih!");
-    document.getElementById("fNama").value="";
-    document.getElementById("fMulai").value="";
-    document.getElementById("fSelesai").value="";
-    document.getElementById("fKet").value="";
-    renderUsulanList();
-  }
-}
-
-/* =========================================================
-   DAFTAR USULAN
-   ========================================================= */
-function formatTanggalID(iso){
-  if(!iso) return "-";
-  const [Y,M,D]=iso.split("-").map(Number);
-  return D+" "+months[M-1]+" "+Y;
-}
-
-function renderUsulanList(){
-  const wrap=document.getElementById("usulanList");
-  const countBadge=document.getElementById("usulanCount");
-  wrap.innerHTML="";
-
-  if(usulanList.length===0){
-    wrap.innerHTML='<div class="empty-note">Belum ada usulan yang masuk.</div>';
-    countBadge.style.display="none";
-    return;
-  }
-
-  countBadge.style.display="inline-block";
-  countBadge.textContent = usulanList.length+" usulan";
-
-  const sorted=[...usulanList].sort((a,b)=> new Date(a.mulai) - new Date(b.mulai));
-
-  sorted.forEach(u=>{
-    const card=document.createElement("div");
-    card.className="usulan-card";
-
-    const info=document.createElement("div");
-    info.className="info";
-    info.innerHTML=`
-      <b><span class="swatch ${u.warna}"></span>${escapeHtml(u.nama)}</b>
-      <div class="meta">${formatTanggalID(u.mulai)}${u.selesai && u.selesai!==u.mulai ? " s.d. "+formatTanggalID(u.selesai) : ""}</div>
-      <div class="ket">${escapeHtml(u.ket)}</div>
-    `;
-    card.appendChild(info);
-
-    if(isAdmin){
-      const actions=document.createElement("div");
-      actions.className="actions";
-
-      const btnTerapkan=document.createElement("button");
-      btnTerapkan.className="success";
-      btnTerapkan.textContent="✅ Terapkan";
-      btnTerapkan.onclick=()=>terapkanUsulan(u.id);
-
-      const btnHapus=document.createElement("button");
-      btnHapus.className="danger";
-      btnHapus.textContent="🗑️ Hapus";
-      btnHapus.onclick=()=>hapusUsulan(u.id);
-
-      actions.appendChild(btnTerapkan);
-      actions.appendChild(btnHapus);
-      card.appendChild(actions);
-    }
-
-    wrap.appendChild(card);
-  });
-}
-
-function escapeHtml(s){
-  const d=document.createElement("div");
-  d.innerText=s;
-  return d.innerHTML;
-}
-
-async function terapkanUsulan(id){
-  if(!isAdmin) return;
-  await loadUsulan();
-  const u=usulanList.find(x=>x.id===id);
-  if(!u){ alert("Usulan tidak ditemukan (mungkin sudah dihapus)."); renderUsulanList(); return; }
-
-  if(!confirm(`Terapkan usulan dari ${u.nama} (${formatTanggalID(u.mulai)}${u.selesai!==u.mulai?" s.d. "+formatTanggalID(u.selesai):""}) ke kalender resmi?`)) return;
-
-  const start=new Date(u.mulai+"T00:00:00");
-  const end=new Date(u.selesai+"T00:00:00");
-  for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)){
-    const key=`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-    official.days[key]= u.warna+"|";
-  }
-  dirty=true;
-
-  usulanList = usulanList.filter(x=>x.id!==id);
-  const okUsulan = await saveUsulan();
-  const okOfficial = await saveOfficial();
-
-  renderCalendar();
-  renderUsulanList();
-
-  if(okUsulan && okOfficial){
-    alert("Usulan diterapkan dan kalender resmi tersimpan.");
-  }
-}
-
-async function hapusUsulan(id){
-  if(!isAdmin) return;
-  if(!confirm("Hapus usulan ini?")) return;
-  await loadUsulan();
-  usulanList = usulanList.filter(x=>x.id!==id);
-  await saveUsulan();
-  renderUsulanList();
-}
-
-/* =========================================================
-   RENDER ALL
-   ========================================================= */
-function renderAll(){
-  updateRoleUI();
-  renderPickers();
-  bindKop();
-  bindControls();
-  renderCalendar();
-  renderUsulanList();
-}
-
-/* =========================================================
-   INIT
-   ========================================================= */
-(async function init(){
-  if(!firebaseSudahDiatur()){
-    document.getElementById("setupScreen").style.display="block";
-    return;
-  }
-
-  try{
-    firebase.initializeApp(FIREBASE_CONFIG);
-    db = firebase.database();
-  }catch(e){
-    console.error(e);
-    document.getElementById("setupScreen").style.display="block";
-    return;
-  }
-
-  document.getElementById("pageContent").style.display="block";
-  isiDropdownWarna();
-  await Promise.all([loadOfficial(), loadUsulan()]);
-  document.getElementById("loadingMsg").style.display="none";
-  document.getElementById("appRoot").style.display="block";
-  renderAll();
-})();
-</script>
-</body>
-</html>
+const D={"S":[["69990832","PAUD Kristen Gamaliel","TK"],["70008902","PAUD Terpadu Al-Madinah","TK"],["40315429","TK Aisyiyah 5","TK"],["69847315","TK Al Qurobil","TK"],["69901013","TK Al-Ahwan","TK"],["69847316","TK Al-Isra","TK"],["40315389","TK Andi Iskandar","TK"],["40315409","TK Az Zaitun","TK"],["40315419","TK Brata Utama","TK"],["40315422","TK Bukit Indah","TK"],["69987941","TK D Nailah","TK"],["69928451","TK HUTRI","TK"],["70041071","TK Iman Al-Qurbah Kota Parepare","TK"],["70032525","TK Islam Terpadu Bunda Wardah","TK"],["40315394","TK Kemala Bhayangkari 04 Brimob","TK"],["69847317","TK Kumala","TK"],["69900215","TK Melati","TK"],["40315413","TK Negeri Bandar Madani","TK"],["40315386","TK Pertiwi","TK"],["40315406","TK Pgri Ujung","TK"],["40316695","TK Putri Ramadhani","TK"],["69914251","TK SC2 Menara","TK"],["40315396","TK Sumpang Minangae","TK"],["40315407","TK Syahrah","TK"],["40315387","TK Tunas Bangsa","TK"],["70052236","TK Zamzam","TK"],["70050567","TK-IT An Naas","TK"],["69949925","TK. Ade Rezky","TK"],["69980445","TK. Airah Fathin Azzahra","TK"],["40315425","TK. Aisyiyah 1","TK"],["69980047","TK. Al -I Tiroof","TK"],["40315398","TK. Al Azhari","TK"],["69973044","TK. Al Firdaus","TK"],["69949578","TK. Al-Imaniah","TK"],["40315411","TK. Amanda","TK"],["69989668","TK. An Nur","TK"],["40315410","TK. Anugrah","TK"],["69987643","TK. Fadil Rahmat","TK"],["40315421","TK. Fadilah","TK"],["69959148","TK. Grand Laugi","TK"],["40315405","TK. Kartika XX-40","TK"],["40315416","TK. Kemala Bhayangkari 19","TK"],["40319059","TK. Nasda Annafiu","TK"],["69903457","TK. Nusa Indah","TK"],["70001994","TK. Pamulang","TK"],["69974517","TK. Pelangi Harapan","TK"],["69987640","TK. Raudhatul Jannah","TK"],["69979844","TK. Safri Annursiah","TK"],["69988603","TK. Tahfizh Al Ilmi","TK"],["40315418","TK. Tridaya","TK"],["69987523","TK. Widyah Handayani","TK"],["40315397","TK. Yasril Ananta Baharuddin","TK"],["69918390","TK.Nurhalifah","TK"],["69989571","TKIT Al Azizi","TK"],["69977077","TKIT At-Tauhid","TK"],["70027759","TKIT Darul Quran Madani Parepare","TK"],["70044520","TKIT Dzul Quwwatil Matiin","TK"],["69972996","TKIT. Al Wildan","TK"],["69980574","TKIT. Andalusia","TK"],["40315385","TKN Pembina","TK"],["69913877","TKN Pembina II","TK"],["40315426","TKS Aisyiyah 2","TK"],["40315427","TKS Aisyiyah 3","TK"],["40315428","TKS Aisyiyah 4","TK"],["40315390","TKS Al-Aqsha","TK"],["40315392","TKs Alternatif","TK"],["40315417","TKS Harapan Kristen","TK"],["40315408","TKS HIGSDI","TK"],["40315402","TKS Kartika XX 39","TK"],["40315415","TKS Kartika XX-12","TK"],["40315403","TKS Katolik","TK"],["40315404","TKS Nurul Huda","TK"],["40315391","TKS PGRI Bacukiki","TK"],["40315420","TKS PGRI Soreang","TK"],["40315401","TKS Yaa Bunayya","TK"],["40307712","SD DDI Ujung Baru Parepare","SD"],["40307713","SD DDI Ujung Lare Parepare","SD"],["70034950","SD Hafizh Al Qurbah Parepare","SD"],["69992155","SD Integral Taman Quran","SD"],["70046018","SD IT Muhammadiyah Kh. Ahmad Dahlan Parepare","SD"],["40307714","SD Katolik Parepare","SD"],["40307716","SD Kristen 1 Parepare","SD"],["70056757","SD Kristen Gamaliel","SD"],["40307718","SD Muhammadiyah 1 Parepare","SD"],["40307719","SD Muhammadiyah 2 Parepare","SD"],["40307720","SD Muhammadiyah 3 Parepare","SD"],["70059607","SD Utama Muhammadiyah 5","SD"],["70053183","SDIT An Naas","SD"],["69987920","SDIT Andalusia","SD"],["70052817","SDIT Bahrul Ulum Parepare","SD"],["69947484","SDIT Bina Insan Parepare","SD"],["70043637","SDIT Darul Qur An Madani","SD"],["70036038","Sekolah Dasar Islam Terpadu Wahdah Islamiyah Parepare","SD"],["40307724","UPTD SD Negeri 1 Parepare","SD"],["40307768","UPTD SD Negeri 2 Parepare","SD"],["40307787","UPTD SD Negeri 3 Parepare","SD"],["40307756","UPTD SD Negeri 4 Parepare","SD"],["40307747","UPTD SD Negeri 5 Parepare","SD"],["40307648","UPTD SD Negeri 7 Parepare","SD"],["40307629","UPTD SD Negeri 8 Parepare","SD"],["40307639","UPTD SD Negeri 9 Parepare","SD"],["40307725","UPTD SD Negeri 10 Parepare","SD"],["40307745","UPTD SD Negeri 11 Parepare","SD"],["40307746","UPTD SD Negeri 12 Parepare","SD"],["40307784","UPTD SD Negeri 14 Parepare","SD"],["40307783","UPTD SD Negeri 15 Parepare","SD"],["40307782","UPTD SD Negeri 16 Parepare","SD"],["40307781","UPTD SD Negeri 17 Parepare","SD"],["40307780","UPTD SD Negeri 18 Parepare","SD"],["40307769","UPTD SD Negeri 19 Parepare","SD"],["40307767","UPTD SD Negeri 20 Parepare","SD"],["40307785","UPTD SD Negeri 21 Parepare","SD"],["40307786","UPTD SD Negeri 22 Parepare","SD"],["40307795","UPTD SD Negeri 23 Parepare","SD"],["40307794","UPTD SD Negeri 24 Parepare","SD"],["40307793","UPTD SD Negeri 25 Parepare","SD"],["40307792","UPTD SD Negeri 26 Parepare","SD"],["40307791","UPTD SD Negeri 27 Parepare","SD"],["40307790","UPTD SD Negeri 28 Parepare","SD"],["40307788","UPTD SD Negeri 29 Parepare","SD"],["40307766","UPTD SD Negeri 30 Parepare","SD"],["40307765","UPTD SD Negeri 31 Parepare","SD"],["40307748","UPTD SD Negeri 32 Parepare","SD"],["40307749","UPTD SD Negeri 33 Parepare","SD"],["40307750","UPTD SD Negeri 34 Parepare","SD"],["40307751","UPTD SD Negeri 35 Parepare","SD"],["40307752","UPTD SD Negeri 36 Parepare","SD"],["40307753","UPTD SD Negeri 37 Parepare","SD"],["40307754","UPTD SD Negeri 38 Parepare","SD"],["40307755","UPTD SD Negeri 39 Parepare","SD"],["40307757","UPTD SD Negeri 42 Parepare","SD"],["40307758","UPTD SD Negeri 43 Parepare","SD"],["40307759","UPTD SD Negeri 44 Parepare","SD"],["40307760","UPTD SD Negeri 45 Parepare","SD"],["40307761","UPTD SD Negeri 46 Parepare","SD"],["40307762","UPTD SD Negeri 47 Parepare","SD"],["40307763","UPTD SD Negeri 48 Parepare","SD"],["40307764","UPTD SD Negeri 49 Parepare","SD"],["40307667","UPTD SD Negeri 50 Parepare","SD"],["40307649","UPTD SD Negeri 51 Parepare","SD"],["40307650","UPTD SD Negeri 52 Parepare","SD"],["40307651","UPTD SD Negeri 53 Parepare","SD"],["40307652","UPTD SD Negeri 54 Parepare","SD"],["40307653","UPTD SD Negeri 55 Parepare","SD"],["40307654","UPTD SD Negeri 56 Parepare","SD"],["40307655","UPTD SD Negeri 57 Parepare","SD"],["40307656","UPTD SD Negeri 58 Parepare","SD"],["40307657","UPTD SD Negeri 59 Parepare","SD"],["40307658","UPTD SD Negeri 61 Parepare","SD"],["40307659","UPTD SD Negeri 62 Parepare","SD"],["40307660","UPTD SD Negeri 63 Parepare","SD"],["40307661","UPTD SD Negeri 64 Parepare","SD"],["40307662","UPTD SD Negeri 65 Parepare","SD"],["40307663","UPTD SD Negeri 66 Parepare","SD"],["40307664","UPTD SD Negeri 67 Parepare","SD"],["40307665","UPTD SD Negeri 68 Parepare","SD"],["40307647","UPTD SD Negeri 70 Parepare","SD"],["40307636","UPTD SD Negeri 71 Parepare","SD"],["40307635","UPTD SD Negeri 73 Parepare","SD"],["40307634","UPTD SD Negeri 75 Parepare","SD"],["40307633","UPTD SD Negeri 76 Parepare","SD"],["40307632","UPTD SD Negeri 77 Parepare","SD"],["40307631","UPTD SD Negeri 78 Parepare","SD"],["40307630","UPTD SD Negeri 79 Parepare","SD"],["40307637","UPTD SD Negeri 80 Parepare","SD"],["40307638","UPTD SD Negeri 81 Parepare","SD"],["40307646","UPTD SD Negeri 82 Parepare","SD"],["40307645","UPTD SD Negeri 83 Parepare","SD"],["40307644","UPTD SD Negeri 84 Parepare","SD"],["40307643","UPTD SD Negeri 85 Parepare","SD"],["40307642","UPTD SD Negeri 86 Parepare","SD"],["40307641","UPTD SD Negeri 88 Parepare","SD"],["40307640","UPTD SD Negeri 89 Parepare","SD"],["40307688","SMP Al Badar Bilalang Parepare","SMP"],["69899899","SMP AL Birru Parepare","SMP"],["40307670","SMP Frater Parepare","SMP"],["40312452","SMP Guppi Parepare","SMP"],["40318296","SMP Hidayatullah Parepare","SMP"],["70039960","SMP Islam Daru Anwaaril Firdaus","SMP"],["70057547","SMP Islam Terpadu Andalusia","SMP"],["70003852","SMP Islam Terpadu Bina Insan Parepare","SMP"],["40307673","SMP Muhammadiyah Parepare","SMP"],["40307674","SMP PGRI 1 Parepare","SMP"],["70043636","SMPIT Darul Quran Madani","SMP"],["40307676","UPTD SMP Negeri 1 Parepare","SMP"],["40307681","UPTD SMP Negeri 2 Parepare","SMP"],["40307682","UPTD SMP Negeri 3 Parepare","SMP"],["40307683","UPTD SMP Negeri 4 Parepare","SMP"],["40307684","UPTD SMP Negeri 5 Parepare","SMP"],["40307685","UPTD SMP Negeri 6 Parepare","SMP"],["40307686","UPTD SMP Negeri 7 Parepare","SMP"],["40307687","UPTD SMP Negeri 8 Parepare","SMP"],["40307707","UPTD SMP Negeri 9 Parepare","SMP"],["40307677","UPTD SMP Negeri 10 Parepare","SMP"],["40307679","UPTD SMP Negeri 11 Parepare","SMP"],["40307680","UPTD SMP Negeri 12 Parepare","SMP"],["40312453","UPTD SMP Negeri 13 Parepare","SMP"],["NPSN","NAMA SEKOLAH","Lainnya"],["P9970280","UPTD SPNF SKB Parepare","Lainnya"]],"P":[{"n":"H. AGUSSALIM, S. Pd., M. Pd.","nip":"19690624 199512 1 003","pk":"Pembina Utama Muda, IV/c","jb":"Pengawas Sekolah Ahli Madya","s":["40307676","40307677","40307683","40307685","40307707","70039960","40307795","40307750","40307650","40307651","70056757"]},{"n":"ANDI AGUNG, S.Pd, M,BA.","nip":"19681230 199403 1 009","pk":"Pembina Utama Muda, IV/c","jb":"Pengawas Sekolah Ahli Madya","s":["40307686","40307687","40312453","40307670","40307787","40307631","40307646","70034950","40307713","40307714"]},{"n":"Drs. H. MUHAMMAD NASIR, M.Pdi","nip":"19661231 200312 1 035","pk":"Pembina Utama Muda, IV/c","jb":"Pengawas Sekolah Ahli Madya","s":["40307680","69899899","40307688","40312452","40307716","40307718","40307712","70052817","70059607","70053183"]},{"n":"ANDI RUSDI, S.Pd.,M.Pd","nip":"19720201 199903 1 008","pk":"Pembina Utama Muda, IV/c","jb":"Pengawas Sekolah Ahli Madya","s":["40307681","40307679","40307673","40318296","70043636","40307767","40307764","40307642","40307719","70046018"]},{"n":"FITRIANI. HS, S.E, M. Pd.","nip":"19810801 201406 2 002","pk":"Penata Tingkat I, III/d","jb":"Pengawas Sekolah Ahli Muda","s":["40307682","40307684","70003852","40307674","70057547","40315419","69928451","69990832","69989571","40315417","70041071"]},{"n":"MAKMUR NONCI, S.Pd., MM.Pd","nip":"19680115 198809 1 001","pk":"Pembina Utama Muda, IV/c","jb":"Pengawas Sekolah Ahli Madya","s":["40307746","40307751","40307761","40307662","40307630","40307793","40307790","40307755","40307667","40307657","70036038"]},{"n":"YAKOLINA SOBON TASIK, S.Pd., M.Pd.","nip":"19750116 199703 2 001","pk":"Pembina Tingkat I, IV/b","jb":"Pengawas Sekolah Ahli Madya","s":["40307783","40307794","40307752","40307641","40307782","40307760","40307655","40307663","40307637","69987920"]},{"n":"MUHAMMAD YUSUF, S.Pd., M.Pd.Gr","nip":"19851130 201001 1 016","pk":"Penata Tingkat I, III/d","jb":"Pengawas Sekolah Ahli Muda","s":["40307654","40307634","40307644","40307749","40307661","40307664","40307665","69947484","69992155","70043637"]},{"n":"MUHAMMAD HARUN AMIR, S.Pd.,Gr.","nip":"19870215 201402 1 001","pk":"Penata Tingkat I, III/d","jb":"Pengawas Sekolah Ahli Muda","s":["40307765","40307748","40307656","40307753","40307649","40307633","40307632","40307645","40307643","40307640"]},{"n":"ENCENG, S.Pd., M.Pd","nip":"19720814 199501 2 001","pk":"Pembina Utama Muda, IV/c","jb":"Pengawas Sekolah Ahli Madya","s":["40307756","40307639","40307745","40307781","40307780","40307785","40307759","40307658","40307720","40315385","70044520","40319059","40315420","69901013","69977077"]},{"n":"BAHRIAH, S.Pd.SD., M.Pd.","nip":"19810417 200502 2 010","pk":"Pembina Tingkat I, IV/b","jb":"Pengawas Sekolah Ahli Madya","s":["40307724","40307747","40307786","40307788","40307766","40307763","40307653","40307659","40315421","40315418","40315415","69949578","40315422"]},{"n":"Hj. SUKMAWATI, S.Pd., M. Pd.","nip":"19690201 199203 2 008","pk":"Pembina Utama Muda, IV/c","jb":"Pengawas Sekolah Ahli Madya","s":["40307791","40307652","40307660","40307636","40307635","40307725","40307757","40307638","69914251","69903457","40315427","40315428","40315416","40315425"]},{"n":"Hj. MASURIAH, S.Pd., M.Pd.I","nip":"19671230 199106 2 001","pk":"Pembina Utama Muda, IV/c","jb":"Pengawas Sekolah Ahli Madya","s":["40307768","40307648","40307629","40307769","40307754","40307758","40307762","40307647","40307784","40307792"]},{"n":"DR. Hj. MULIATI, S.Pd. M. Pd.","nip":"19700927 199203 2 005","pk":"Pembina Utama Muda, IV/c","jb":"Pengawas Sekolah Ahli Madya","s":["40315413","40315411","40315426","40315408","69918390","69900215","40315402","70008902","40315407","40315405","40315406","40315403","40315409","70027759","40315404","40315410","69980574","69988603"]},{"n":"HERLINA HUSAIN, S.Pd., M. Pd.","nip":"19671231 198703 2 041","pk":"Pembina Utama Muda, IV/c","jb":"Pengawas Sekolah Ahli Madya","s":["69987643","69979844","40315429","69847316","70001994","69974517","69959148","69987941","69949925","40315390","69980047","69980445","69847315","40315392","70052236"]},{"n":"HJ. DJAMILAH PILE, S.Pd. M. Pd.","nip":"19720107 199103 1 001","pk":"Pembina Utama Muda, IV/c","jb":"Pengawas Sekolah Ahli Madya","s":["40315396","40315394","69973044","40315397","69847317","40315401","40315386","40315391","40315398","40315389","69989668","69987640","40316695","69913877","P9970280","69987523","40315387","70032525","69972996","70050567"]}],"K":{"mn":[["a.","bahwa untuk memenuhi beban kerja pengawas sekolah sebagaimana diatur dalam pasal 52,53, dan 54 peraturan pemerintah Nomor 74 Tahun 2008 tentang guru serta  untuk plotting Tim Kinerja Pengawas Sekolah maka diperlukan pembagian tugas kepengawasan sekolah"],["b.","bahwa untuk maksud huruf a diatas, perlu menetapkan keputusan Kepala Dinas Pendidikan dan Kebudayaan Kota Parepare tentang pembagian tugas pengawas sekolah di lingkungan Dinas Pendidikan dan Kebudayaan Kota Parepare"]],"mg":[["1.","Undang-undang Nomor 20 Tahun 2003 Tentang Sistem Pendidikan Nasional (Lembaran Negara Republik Indonesia Tahun 2003 Nomor 78, Tambahan Lembaran Negara Nomor 4301);"],["2.","Peraturan Pemerintah Nomor 19 Tahun 2005 yang telah          diubah menjadi Peraturan Pemerintah No 32 Tahun 2013   tentang Standar Nasional Pendidikan;"],["3.","Peraturan  Menteri  Pendidikan dan Kebudayaan Republik Indonesia Nomor  15  Tahun  2018 tentang Beban Kerja Guru, Kepala Sekolah dan Pengawas Sekolah;"],["4.","Peraturan Menteri Negara Pendayagunaan Aparatur Negara dan Reformasi Birokrasi Nomor 21 Tahun 2010 tentang Jabatan Fungsional Pengawas dan Angka Kreditnya yang telah diubah menjadi Peraturan Menteri Negara Pendayagunaan Aparatur Negara dan Reformasi Birokrasi Nomor 14 Tahun 2016 tentang Jabatan Fungsional Pengawas dan Angka Kreditnya;"],["5.","Peraturan Menteri Pendidikan Nasional Republik Indonesia Nomor 8 Tahun 2007 Tentang Organisasi, dan Tata Kerja Pusat Pengembangan dan Pemberdayaan Pendidik dan Tenaga Kependidikan ;"],["6.","Peraturan Menteri Pendidikan Nasional Nomor 12 Tahun 2007 Tentang Standar Pengawas Sekolah/Madrasah;"],["7.","Peraturan Menteri Pendidikan dan Kebudayaan Republik Indonesia Nomor 143 Tahun 2014 Tentang petunjuk teknis pelaksanaan jabatan fungsional Pengawas Sekolah dan angka kreditnya;"],["8.","Peraturan Menteri Pendidikan dan Kebudayaan Republik Indonesia Nomor 15 Tahun 2018 Tentang pemenuhan beban kerja guru, kepala sekolah, dan pengawas sekolah"],["9.","Peraturan Menteri Pendayagunaan Aparatur Negara dan Reformasi Birokrasi Nomor 1 Tahun 2023 tentang Jabatan Fungsional (Berita Negara Republik Indonesia Tahun 2023 Nomor 54"],["10.","Peraturan Menteri Pendidikan dan Kebudayaan, Riset, dan Teknologi Republik Indonesia Nomor 25 Tahun 2024 tentang Perubahan atas Peraturan Menteri Pendidikan dan Kebudayaan Nomor 15 Tahun 2018 Tentang Pemenuhan Beban Kerja Guru, Kepala Sekolah dan Pengawas Sekolah"],["11.","Peraturan Direktur Jenderal GTK Nomor 7607/B.B1/HK.03/2023 tentang Petunjuk Teknis Pengelolaan Kinerja Guru dan Kepala Sekolah"]],"mp":[["1.","Hasil rapat kerja pengawas sekolah tanggal 3 Januari 2023 tentang pembagian tugas kepengawasan sekolah binaan pada lingkup Dinas Pendidikan dan Kebudayaan Kota Parepare."],["2.","Hasil rapat internal pengawas sekolah tanggal  25 November  2024 tentang perubahan tugas kepengawasan sekolah binaan pada lingkup Dinas Pendidikan dan Kebudayaan Kota parepare."]],"k2l":[["a","Melaksanakan tugas pengawasan, pembimbingan, dan pelatihan profesional terhadap guru"],["b","Merencanakan, mengevaluasi, dan melaporkan hasil pelaksanaan pembinaan, pemantauan, penilaian dan pembimbingan terhadap Guru dan Kepala Sekoalh"]],"tb":[["1.","Walikota Parepare di Parepare"],["2.","Kepala BKPSDMD Kota Parepare di Parepare"],["3.","Para Kepala Bidang Dinas Pendidikan dan Kebudayaan Kota Parepare"],["4.","Ketua MKKS dan KKKS Kota Parepare"],["5.","Masing-masing Pengawas Sekolah Satuan Pendidikan"],["6.","Arsip"]],"tt":"KEPUTUSAN KEPALA DINAS PENDIDIKAN DAN KEBUDAYAAN KOTA PAREPARE TENTANG PEMBAGIAN TUGAS PENGAWAS SEKOLAH LINGKUP DINAS PENDIDIKAN DAN KEBUDAYAAN KOTA PAREPARE TAHUN ANGGARAN 2024","k1":"Menetapkan pembagian tugas pengawas sekolah pada jenjang TK, SD, dan SMP sebagaimana yang tercantum pada daftar lampiran I, II, dan III keputusan ini.","k2":"Tugas Pengawas sebagaimana dimaksud pada diktum KESATU di atas, adalah sebagai berikut :","k3":"Keputusan ini mulai berlaku efektif pada tanggal 2 Januari 2025, dan apabila terdapat kekeliruan dalam Keputusan ini, maka akan dilakukan perbaikan sebagaimana mestinya","tgl":"Parepare, 7 Januari 2026","nm":"H.M. MAKMUR"}};
+const PK=["Penata Muda, III/a","Penata Muda Tingkat I, III/b","Penata, III/c","Penata Tingkat I, III/d","Pembina, IV/a","Pembina Tingkat I, IV/b","Pembina Utama Muda, IV/c","Pembina Utama Madya, IV/d","Pembina Utama, IV/e"];
+const JB=["Pengawas Sekolah Ahli Pertama","Pengawas Sekolah Ahli Muda","Pengawas Sekolah Ahli Madya","Pengawas Sekolah Ahli Utama"];
+const $=i=>document.getElementById(i),E=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let SL=D.S,IDX={},sch={},cur=null,isOwner=false,filled=null,px=null,ap={},sb={},us={},ust={},myname="",ord=[];
+const T=a=>a.map(x=>x[1]),DK={nomor:"001",tahun:"2026",tgl:D.K.tgl.replace("Parepare, ",""),nm:D.K.nm,mn:T(D.K.mn),mg:T(D.K.mg),mp:T(D.K.mp),tt:D.K.tt,k1:D.K.k1,k2:D.K.k2,k2l:T(D.K.k2l),k3:D.K.k3,tb:T(D.K.tb)};let K=DK;
+function vis(){const u=new Set(),r={};for(const[i,d]of Object.entries(docs))if(!i.startsWith("seed_")&&d.x!=null&&ap[i])u.add(d.x);for(const[i,d]of Object.entries(docs))if(!(i.startsWith("seed_")&&u.has(d.x)))r[i]=d;return r}
+function reb(){const m={};D.S.forEach(s=>m[s[0]]=s);for(const v of Object.values(sb))(v.a||[]).forEach(a=>m[a.id]=[a.id,a.nama,a.j||"Lainnya"]);for(const[k,v]of Object.entries(sch)){if(v.del)delete m[k];else m[k]=[k,v.nama,v.jenj||"Lainnya"]}
+const o={SMP:0,SD:1,TK:2,Lainnya:3};SL=Object.values(m).sort((a,b)=>o[a[2]]-o[b[2]]||a[1].localeCompare(b[1],"id",{numeric:true}));IDX={};SL.forEach((s,i)=>IDX[s[0]]=i)}
+reb();
+function ed(){if(!isOwner)return;$("edw").hidden=false;let h=`<option value="${me}">${E(docs[me]?.nama||"Akun saya (belum diisi)")}</option>`;for(const[i,d]of Object.entries(vis()))if(i!==me)h+=`<option value="${i}">${E(d.nama)}</option>`;if(cur!==me&&!docs[cur])h+=`<option value="${cur}">(pengawas baru)</option>`;h+='<option value="+">+ Tambah pengawas baru</option>';$("ed").innerHTML=h;$("ed").value=cur;$("imp").hidden=!D.P.some((p,i)=>!Object.values(docs).some(d=>d.x===i))}
+$("imp").onclick=async()=>{if(!confirm("Buat data semua pengawas dari Excel? Setelah itu Anda bisa mengedit tiap pengawas."))return;const used=new Set();Object.values(vis()).forEach(d=>(d.s||[]).forEach(n=>used.add(n)));try{for(const[i,p]of D.P.entries()){if(Object.values(docs).some(d=>d.x===i))continue;const s=p.s.filter(n=>n in IDX&&!used.has(n));s.forEach(n=>used.add(n));await db.doc("pengawas/seed_"+i).set({nama:p.n,nip:p.nip,pk:p.pk,jb:p.jb,s,c:i+1,t:Date.now(),x:i});await db.doc("setuju/seed_"+i).set({ok:true})}}catch(e){alert("Gagal: "+(e.message||e.code))}};
+$("ed").onchange=e=>{cur=e.target.value=="+"?"p"+Date.now().toString(36):e.target.value;fill(true);list()};
+$("dl").onclick=async()=>{if(!confirm("Hapus pengawas ini beserta daftar sekolah binaannya dari SK?"))return;try{await db.doc("pengawas/"+cur).delete();delete docs[cur];filled=null;if(isOwner)cur=me;fill(true);list();$("st").textContent="Dihapus"}catch(e){alert("Gagal menghapus: "+(e.message||e.code))}};
+$("sa").onclick=async()=>{const nama=$("sn").value.trim().replace(/\s+/g," "),id=$("sp").value.trim().replace(/[^A-Za-z0-9]/g,"");if(!nama||!id)return alert("Nama sekolah dan NPSN wajib diisi.");if(id in IDX)return alert("NPSN sudah ada di daftar.");if(sch[id]&&sch[id].del)return alert("NPSN ini sudah dihapus admin. Hubungi admin.");try{if(isOwner)await db.doc("sekolah/"+id).set({nama,jenj:$("sj").value});else await db.doc("sekolah_baru/"+me).set({a:[...(sb[me]?.a||[]),{id,nama,j:$("sj").value}]});sel.add(id);$("sn").value=$("sp").value=""}catch(e){alert("Gagal menambah: "+(e.message||e.code))}};
+$("ls").onclick=async e=>{const x=e.target.dataset&&e.target.dataset.x;if(!x)return;e.preventDefault();const s=SL[IDX[x]];if(!s||!confirm("Hapus sekolah "+s[1]+" dari daftar?"))return;sel.delete(x);try{await db.doc("sekolah/"+x).set({del:true,nama:s[1]})}catch(e){alert("Gagal menghapus: "+(e.message||e.code))}};
+let db,me=null,docs={},sel=new Set(),flt="Semua",loaded=false;
+const opt=(a,v)=>a.map(x=>`<option${x===v?" selected":""}>${E(x)}</option>`).join("");
+$("pk").innerHTML=opt(PK,PK[6]);$("jb").innerHTML=opt(JB,JB[2]);
+$("pre").innerHTML='<option value="">— pilih nama —</option>'+D.P.map((p,i)=>`<option value="${i}">${E(p.n)}</option>`).join("");
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x===b));["f","s","e"].forEach(i=>$(i).hidden=b.dataset.t!=i);if(b.dataset.t=="s")sk()});
+function taken(){const t={};for(const[id,d]of Object.entries(vis()))if(id!==cur&&!(px!=null&&d.x===px))(d.s||[]).forEach(n=>t[n]=d.nama);return t}
+$("ch").innerHTML=["Semua","TK","SD","SMP","Lainnya"].map(c=>`<span class="chip${c=="Semua"?" on":""}">${c}</span>`).join("");
+$("ch").onclick=e=>{if(!e.target.classList.contains("chip"))return;flt=e.target.textContent;[...$("ch").children].forEach(c=>c.classList.toggle("on",c===e.target));list()};
+$("q").oninput=list;
+function list(){const t=taken(),q=$("q").value.toLowerCase();
+$("ls").innerHTML=SL.filter(s=>(flt=="Semua"||s[2]==flt)&&(s[1].toLowerCase().includes(q)||s[0].includes(q))).map(s=>{const o=t[s[0]];return `<label class="it${o?" dis":""}" style="margin:0"><input type="checkbox" value="${s[0]}"${sel.has(s[0])?" checked":""}${o?" disabled":""}><span>${E(s[1])}<br><small>NPSN ${s[0]} · ${s[2]}</small></span>${o?`<span class="tk">Binaan<br>${E(o)}</span>`:""}${isOwner?`<button class="btn" data-x="${s[0]}" style="padding:2px 8px;margin-left:8px">Hapus</button>`:""}</label>`}).join("")||'<div class="it sub">Tidak ada sekolah.</div>';
+$("cnt").textContent=sel.size+" sekolah dipilih"}
+$("ls").onchange=e=>{e.target.checked?sel.add(e.target.value):sel.delete(e.target.value);list()};
+$("pre").onchange=e=>{const p=D.P[e.target.value];px=p?+e.target.value:null;if(!p)return;const t=taken();$("nama").value=p.n;$("nip").value=p.nip;$("pk").innerHTML=opt(PK,p.pk);$("jb").innerHTML=opt(JB,p.jb);sel=new Set(p.s.filter(n=>!t[n]));list()};
+$("sv").onclick=async()=>{const nama=$("nama").value.trim();if(!nama){$("st").textContent="";return alert("Nama lengkap wajib diisi.")}
+const t=taken(),s=[...sel].filter(n=>!t[n]&&n in IDX).sort((a,b)=>IDX[a]-IDX[b]);sel=new Set(s);
+try{await db.doc("pengawas/"+cur).set({nama,nip:$("nip").value.trim(),pk:$("pk").value,jb:$("jb").value,s,c:docs[cur]?.c||(px!=null&&docs["seed_"+px]?.c)||Date.now(),t:Date.now(),...(px!=null?{x:px}:{})});if(isOwner)await db.doc("setuju/"+cur).set({ok:true});$("st").textContent=isOwner||ap[cur]?"✓ Tersimpan":"✓ Tersimpan — menunggu persetujuan admin";$("dl").hidden=false}catch(e){$("st").textContent="";alert("Gagal menyimpan: "+(e.message||e.code)+"\nPastikan Anda punya akses edit pada dashboard ini.")}};
+function fill(f){if(!f&&filled===cur)return;const d=docs[cur];if(!d&&!f)return;filled=cur;px=d&&d.x!=null?d.x:null;const x=d||{};$("nama").value=x.nama||"";$("nip").value=x.nip||"";$("pk").innerHTML=opt(PK,x.pk||PK[6]);$("jb").innerHTML=opt(JB,x.jb||JB[2]);sel=new Set(x.s||[]);$("dl").hidden=!d;ed();stt()}
+const SF=[["nomor","Nomor SK",0],["tahun","Tahun / Tahun Anggaran",0],["tgl","Tanggal SK (mis. 7 Januari 2026)",0],["nm","Nama Kepala Dinas",0],["mn","Menimbang (1 baris = 1 butir)",1],["mg","Mengingat",1],["mp","Memperhatikan",1],["tt","Menetapkan",2],["k1","KESATU",2],["k2","KEDUA",2],["k2l","KEDUA – butir tugas (1 baris = 1 butir)",1],["k3","KETIGA",2],["tb","Tembusan",1]];
+function skform(){if(!isOwner)return;const h=$("skf");if(!h.dataset.b){h.dataset.b=1;h.innerHTML=SF.map(f=>`<label>${f[1]}</label>`+(f[2]?`<textarea id="k_${f[0]}" rows="${f[2]==1?4:3}" style="width:100%;padding:9px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit"></textarea>`:`<input type="text" id="k_${f[0]}">`)).join("")}
+SF.forEach(f=>{const v=K[f[0]];$("k_"+f[0]).value=Array.isArray(v)?v.join("\n"):v})}
+$("es2").onclick=async()=>{const o={};SF.forEach(f=>{const v=$("k_"+f[0]).value;o[f[0]]=f[2]==1?v.split("\n").map(x=>x.trim()).filter(Boolean):v.trim()});try{await db.doc("sk/teks").set(o);$("es").textContent="✓ Tersimpan"}catch(e){alert("Gagal: "+(e.message||e.code))}};
+$("rs").onclick=async()=>{if(!confirm("Kembalikan teks SK ke bawaan Excel?"))return;try{await db.doc("sk/teks").delete()}catch(e){alert("Gagal: "+(e.message||e.code))}};
+function stt(){const d=docs[cur];$("apx").textContent=!d?"":ap[cur]?"✓ Disetujui admin":"⏳ Menunggu persetujuan admin — belum tampil di SK"}
+function adm(){if(!isOwner)return;const L=[...OR(),...Object.entries(vis()).filter(([i])=>!ap[i])],p=L.filter(([i])=>!ap[i]).length;const q=p+UL().filter(x=>!ust[x.id]).length;$("te").textContent="Admin"+(q?` (${q})`:"");ual();
+$("apl").innerHTML=L.map(([i,d],n)=>`<div class="it" style="cursor:default"><span>${ap[i]?(n+1)+". ":""}${E(d.nama)}<br><small>${(d.s||[]).length} sekolah · ${ap[i]?"Disetujui":"Menunggu persetujuan"}</small></span><span style="margin-left:auto">${ap[i]?`<button class="btn" data-a="up" data-i="${E(i)}">▲</button><button class="btn" data-a="dn" data-i="${E(i)}">▼</button> <button class="btn" data-a="cb" data-i="${E(i)}">Cabut</button>`:`<button class="btn p" data-a="ok" data-i="${E(i)}">Setujui</button> <button class="btn" data-a="no" data-i="${E(i)}">Tolak</button>`}</span></div>`).join("")||'<div class="it sub">Belum ada pengawas.</div>'}
+$("apl").onclick=async e=>{const a=e.target.dataset.a,i=e.target.dataset.i;if(!a)return;try{if(a=="up"||a=="dn"){const ids=OR().map(x=>x[0]),k=ids.indexOf(i),m=a=="up"?k-1:k+1;if(m<0||m>=ids.length)return;[ids[k],ids[m]]=[ids[m],ids[k]];await db.doc("sk/urutan").set({ids})}else if(a=="ok")await db.doc("setuju/"+i).set({ok:true});else if(a=="cb")await db.doc("setuju/"+i).delete();else if(confirm("Tolak dan hapus data pengawas ini?")){await db.doc("pengawas/"+i).delete();await db.doc("setuju/"+i).delete().catch(()=>0)}}catch(x){alert("Gagal: "+(x.message||x.code))}};
+function sk(){const L=OR().map(x=>x[1]);$("sc").textContent=L.length+" pengawas disetujui";
+const A=i=>String.fromCharCode(97+i)+".",N=i=>(i+1)+".";
+const li=(a,f,lb)=>a.map((x,i)=>`<tr><td width="95">${i?"":f}</td><td width="14">${i?"":":"}</td><td width="22">${lb(i)}</td><td>${E(x)}</td></tr>`).join("");
+const rows=L.map((d,i)=>{const s=(d.s||[]).filter(n=>n in IDX).sort((a,b)=>IDX[a]-IDX[b]),r=Math.max(s.length,4),nm=[d.nama,"NIP. "+(d.nip||"-"),d.pk,d.jb];let h="";
+for(let j=0;j<r;j++){const k=s[j]?SL[IDX[s[j]]]:null;h+="<tr>"+(j?"":`<td rowspan="${r}" class="c">${i+1}</td><td rowspan="${r}"><b>${E(nm[0])}</b><br>${E(nm[1])}<br>${E(nm[2])}<br>${E(nm[3])}</td>`)+`<td class="c">${k?j+1:""}</td><td class="c">${k?k[0]:""}</td><td>${k?E(k[1]):""}</td>`+(j?"":`<td rowspan="${r}" class="c">Jumlah Binaan,<br>${s.length} Satuan<br>Pendidikan</td>`)+"</tr>"}return h}).join("");
+$("sk").innerHTML=`<div class="kop c"><b>PEMERINTAH KOTA PAREPARE<br><span style="font-size:16px">DINAS PENDIDIKAN DAN KEBUDAYAAN</span></b><br>Jalan Pettana Rajeng No. 1 Telp. (0421) 21166 Parepare<br>e-mail : dinaspendidikan@pareparekota.go.id</div>
+<div class="c"><b>KEPUTUSAN KEPALA DINAS PENDIDIKAN DAN KEBUDAYAAN<br>KOTA PAREPARE<br>NOMOR : ${E(K.nomor)} TAHUN ${E(K.tahun)}<br>TENTANG<br>PEMBAGIAN TUGAS PENGAWAS SEKOLAH<br>LINGKUP DINAS PENDIDIKAN DAN KEBUDAYAAN<br>KOTA PAREPARE TAHUN ANGGARAN ${E(K.tahun)}<br><br>KEPALA DINAS PENDIDIKAN DAN KEBUDAYAAN KOTA PAREPARE,</b></div><br>
+<table class="l">${li(K.mn,"Menimbang",A)}${li(K.mg,"Mengingat",N)}${li(K.mp,"Memperhatikan",N)}</table>
+<p class="c"><b>MEMUTUSKAN</b></p>
+<table class="l"><tr><td width="95">Menetapkan</td><td width="14">:</td><td>${E(K.tt)}</td></tr><tr><td>KESATU</td><td>:</td><td>${E(K.k1)}</td></tr><tr><td>KEDUA</td><td>:</td><td>${E(K.k2)}${K.k2l.map((x,i)=>"<br>"+A(i)+" "+E(x)).join("")}</td></tr><tr><td>KETIGA</td><td>:</td><td>${E(K.k3)}</td></tr></table>
+<table style="margin-top:18px"><tr><td width="55%"></td><td class="c">Parepare, ${E(K.tgl)}<br>KEPALA DINAS PENDIDIKAN DAN<br>KEBUDAYAAN KOTA PAREPARE<br><br><br><br><br><b><u>${E(K.nm)}</u></b></td></tr></table>
+<p>Tembusan :<br>${K.tb.map((x,i)=>N(i)+" "+E(x)).join("<br>")}</p>
+<div class="pb"><table style="margin-bottom:8px"><tr><td width="50%"><b>LAMPIRAN</b></td><td>KEPUTUSAN KEPALA DINAS PENDIDIKAN<br>DAN KEBUDAYAAN KOTA PAREPARE<br>NOMOR : ${E(K.nomor)} TAHUN ${E(K.tahun)}<br>TANGGAL : ${E(K.tgl.toUpperCase())}</td></tr></table>
+<table class="t"><tr><th rowspan="2">NO.</th><th rowspan="2">NAMA - NIP</th><th colspan="3">Sekolah Binaan</th><th rowspan="2">KETERANGAN</th></tr><tr><th>NO.</th><th>NPSN</th><th>SATUAN PENDIDIKAN</th></tr>${rows||'<tr><td colspan="6" class="c">Belum ada pengawas yang disetujui.</td></tr>'}</table></div>`}
+const OR=()=>{const pos=(i,d)=>{let k=ord.indexOf(i);if(k<0&&d.x!=null)k=ord.indexOf("seed_"+d.x);return k<0?1e9:k};return Object.entries(vis()).filter(([i])=>ap[i]).sort((a,b)=>pos(a[0],a[1])-pos(b[0],b[1])||a[1].c-b[1].c)};
+const UL=()=>Object.entries(us).flatMap(([uid,d])=>(d.u||[]).map(x=>({...x,uid}))).sort((a,b)=>b.t-a.t);
+const dt=x=>new Date(x.t).toLocaleDateString("id-ID");
+function usl(){$("um").innerHTML=UL().filter(x=>x.uid===me).map(x=>{const s=ust[x.id]||{};return `<div class="it" style="cursor:default"><span>${E(x.k)}: ${E(x.txt)}<br><small>${dt(x)} · ${s.st=="selesai"?"✓ Selesai ditindaklanjuti":s.st=="ditolak"?"Tidak diproses":"Menunggu admin"}${s.cat?" — "+E(s.cat):""}</small></span>${s.st?"":`<button class="btn" style="margin-left:auto" data-d="${E(x.id)}">Hapus</button>`}</div>`}).join("")}
+$("ub").onclick=async()=>{const txt=$("ut").value.trim();if(!txt)return alert("Tulis usulan terlebih dahulu.");try{await db.doc("usulan/"+me).set({u:[...(us[me]?.u||[]),{id:"u"+Date.now().toString(36),t:Date.now(),k:$("uk").value,txt,nm:docs[me]?.nama||myname||"Pengawas"}]});$("ut").value="";$("us").textContent="✓ Terkirim ke admin"}catch(e){alert("Gagal mengirim: "+(e.message||e.code))}};
+$("um").onclick=async e=>{const i=e.target.dataset.d;if(!i)return;try{await db.doc("usulan/"+me).set({u:(us[me]?.u||[]).filter(x=>x.id!==i)})}catch(x){alert("Gagal: "+(x.message||x.code))}};
+function ual(){$("ual").innerHTML=UL().filter(x=>ust[x.id]?.st!="hapus").map(x=>{const s=ust[x.id]||{},i=E(x.id);return `<div class="it" style="cursor:default;align-items:flex-start"><span><b>${E(x.nm)}</b> · <small>${E(x.k)} · ${dt(x)}</small><br>${E(x.txt)}${s.st?`<br><small>${s.st=="selesai"?"✓ Selesai":"Tidak diproses"}${s.cat?" — "+E(s.cat):""}</small>`:""}</span><span style="margin-left:auto;display:flex;gap:4px;flex-wrap:wrap">${s.st?"":`<button class="btn p" data-s="selesai" data-i="${i}">Selesai</button><button class="btn" data-s="ditolak" data-i="${i}">Tolak</button>`}<button class="btn" data-s="hapus" data-i="${i}">Hapus</button></span></div>`}).join("")||'<div class="it sub">Belum ada usulan.</div>'}
+$("ual").onclick=async e=>{const s=e.target.dataset.s,i=e.target.dataset.i;if(!s)return;let cat="";if(s!="hapus")cat=prompt("Catatan untuk pengawas (opsional):")||"";try{await db.doc("usulan_st/"+i).set({st:s,cat})}catch(x){alert("Gagal: "+(x.message||x.code))}};
+firebase.initializeApp(FB_CONFIG);
+const auth=firebase.auth(),fs=firebase.firestore();let iz={},started=false;
+const ERR={"auth/invalid-credential":"Email atau kata sandi salah.","auth/wrong-password":"Email atau kata sandi salah.","auth/user-not-found":"Email atau kata sandi salah.","auth/email-already-in-use":"Email sudah terdaftar. Silakan masuk.","auth/weak-password":"Kata sandi minimal 6 karakter.","auth/invalid-email":"Format email tidak valid.","auth/popup-closed-by-user":"","auth/too-many-requests":"Terlalu banyak percobaan. Coba lagi nanti."};
+const er=e=>{$("lm").textContent=ERR[e.code]??(e.message||e.code)},cred=()=>[$("le").value.trim(),$("lp").value];
+$("lin").onclick=()=>auth.signInWithEmailAndPassword(...cred()).catch(er);
+$("lup").onclick=async()=>{try{const c=await auth.createUserWithEmailAndPassword(...cred());await c.user.sendEmailVerification()}catch(x){er(x)}};
+$("lgo").onclick=()=>auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(er);
+$("lrs").onclick=e=>{e.preventDefault();const m=$("le").value.trim();if(!m){$("lm").textContent="Isi email dulu.";return}auth.sendPasswordResetEmail(m).then(()=>$("lm").textContent="Email atur ulang kata sandi sudah dikirim.").catch(er)};
+$("out").onclick=$("vo").onclick=()=>auth.signOut().then(()=>location.reload());
+$("vr").onclick=()=>auth.currentUser.sendEmailVerification().then(()=>$("vm").textContent="Email verifikasi dikirim ulang.").catch(x=>$("vm").textContent=ERR[x.code]??x.message);
+$("vk").onclick=async()=>{const u=auth.currentUser;await u.reload();if(u.emailVerified){await u.getIdToken(true);start(u)}else $("vm").textContent="Email belum terverifikasi."};
+function izl(){$("izl").innerHTML=Object.keys(iz).sort().map(e=>`<div class="it" style="cursor:default"><span>${E(e)}</span><button class="btn" style="margin-left:auto" data-e="${E(e)}">Hapus</button></div>`).join("")||'<div class="it sub">Belum ada email.</div>'}
+$("izb").onclick=async()=>{const L=$("izt").value.split(/[\s,;]+/).map(x=>x.trim().toLowerCase()).filter(x=>/^\S+@\S+\.\S+$/.test(x));if(!L.length)return alert("Tidak ada email yang valid.");try{for(const e of L)await fs.doc("izin/"+e).set({t:Date.now()});$("izt").value="";$("izs").textContent="✓ "+L.length+" email ditambahkan"}catch(e){alert("Gagal: "+(e.message||e.code))}};
+$("izl").onclick=async e=>{const m=e.target.dataset.e;if(!m||!confirm("Hapus izin "+m+"? (Data yang sudah diisi tidak ikut terhapus)"))return;try{await fs.doc("izin/"+m).delete()}catch(x){alert("Gagal: "+(x.message||x.code))}};
+var mn={},reqd=false;
+function mnl(){const k=Object.keys(mn);$("mnc").hidden=!k.length;$("mnl").innerHTML=k.map(id=>`<div class="it" style="cursor:default"><span>${E(mn[id].nama||"")} <small>${E(mn[id].email||"")}</small></span><span style="margin-left:auto;display:flex;gap:6px"><button class="btn p" data-a="y" data-u="${E(id)}">Izinkan</button><button class="btn" data-a="n" data-u="${E(id)}">Tolak</button></span></div>`).join("")}
+$("mnl").onclick=async e=>{const b=e.target.closest("button");if(!b)return;const id=b.dataset.u,d=mn[id];if(!d)return;try{if(b.dataset.a=="y")await fs.doc("izin/"+String(d.email).toLowerCase()).set({t:Date.now()});await fs.doc("menunggu/"+id).delete()}catch(x){alert("Gagal: "+(x.message||x.code))}};
+auth.onAuthStateChanged(u=>{if(!u){$("app").hidden=true;$("vf").hidden=true;$("lgf").hidden=false;$("lg").hidden=false;return}
+if(!u.emailVerified){$("app").hidden=true;$("lgf").hidden=true;$("vf").hidden=false;$("lg").hidden=false;$("ve").textContent=u.email;return}
+start(u)});
+async function start(u){if(started)return;started=true;$("lg").hidden=true;$("app").hidden=false;db=fs;me=u.uid;
+try{isOwner=(await fs.doc("admins/"+me).get()).exists}catch(e){}
+cur=me;$("te").hidden=!isOwner;myname=u.displayName||u.email||"";$("who").textContent=myname;list();
+const er2=e=>{$("note").hidden=false;if(e.code=="permission-denied"){$("note").textContent="Email Anda ("+u.email+") belum diizinkan. Permintaan akses sudah dikirim otomatis ke admin. Setelah disetujui, muat ulang halaman ini.";if(!reqd&&!isOwner){reqd=true;fs.doc("menunggu/"+me).set({email:(u.email||"").toLowerCase(),nama:u.displayName||"",t:Date.now()}).catch(()=>{})}}else $("note").textContent="Tidak dapat membaca data: "+(e.message||e.code)};
+const on=(p,f)=>(p.includes("/")&&p.split("/").length%2==0?fs.doc(p):fs.collection(p)).onSnapshot(f,er2),S=()=>{if(!$("s").hidden)sk()};
+on("sekolah",s=>{sch={};s.docs.forEach(d=>sch[d.id]=d.data());reb();list();S()});
+on("sekolah_baru",s=>{sb={};s.docs.forEach(d=>sb[d.id]=d.data());reb();list();S()});
+on("setuju",s=>{ap={};s.docs.forEach(d=>ap[d.id]=1);stt();adm();S()});
+on("sk/teks",s=>{K=s.exists?{...DK,...s.data()}:DK;skform();S()});
+on("sk/urutan",s=>{ord=s.exists&&s.data().ids||[];adm();S()});
+on("usulan",s=>{us={};s.docs.forEach(d=>us[d.id]=d.data());usl();adm()});
+on("usulan_st",s=>{ust={};s.docs.forEach(d=>ust[d.id]=d.data());usl();adm()});
+if(isOwner){on("izin",s=>{iz={};s.docs.forEach(d=>iz[d.id]=d.data());izl()});on("menunggu",s=>{mn={};s.docs.forEach(d=>mn[d.id]=d.data());mnl()})}
+on("pengawas",s=>{docs={};s.docs.forEach(d=>docs[d.id]=d.data());fill();ed();stt();adm();list();S()})}
+</script></body></html>
